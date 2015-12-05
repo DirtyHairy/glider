@@ -1,0 +1,23 @@
+<html>
+
+<head>
+    <script src="nolayers.js"></script>
+</head>
+
+<body>
+    <canvas id="viewer-canvas" width="640" height="480"></canvas>
+
+    <script>
+        var renderer = new nolayers.Renderer(document.getElementById('viewer-canvas'), 'koala.jpg');
+
+        renderer.init()
+            .then(function() {
+                renderer.render();
+            })
+            .fail(function(err) {
+                console.log('rederer failed to initialize', err);
+            });
+    </script>
+</body>
+
+</html>
