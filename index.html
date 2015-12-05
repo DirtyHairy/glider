@@ -12,6 +12,11 @@
 
         renderer.init()
             .then(function() {
+                renderer.getTransformation()
+                    .setScale(0.3)
+                    .setTranslateX(-400)
+                    .setTranslateY(200);
+
                 renderer.render();
             })
             .fail(function(err) {

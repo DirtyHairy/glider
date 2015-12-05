@@ -2,7 +2,8 @@ var q = require('q'),
     glmatrix = require('gl-matrix'),
     utils = require('./utils'),
     Program = require('./glutil/Program'),
-    Texture = require('./glutil/Texture');
+    Texture = require('./glutil/Texture'),
+    Transformation = require('./Transformation');
 
 var fs = require('fs');
 
@@ -14,11 +15,10 @@ var imageLayerVertexShaderSource =
 var TEXTURE_UNIT = 0;
 
 function Renderer(canvas, imageUrl) {
-    var me = this;
-
-    me._canvas = canvas;
-    me._gl = canvas.getContext('webgl');
-    me._imageUrl = imageUrl;
+    this._canvas = canvas;
+    this._gl = canvas.getContext('webgl');
+    this._imageUrl = imageUrl;
+    this._transformation = new Transformation();
 }
 
 utils.extend(Renderer.prototype, {
@@ -35,7 +35,7 @@ utils.extend(Renderer.prototype, {
     _textureCoordinateBuffer: null,
     _texture: null,
 
-    _scale: 0.4,
+    _transformation: null,
 
     _loadImageData: function() {
         var me = this;
@@ -122,13 +122,25 @@ utils.extend(Renderer.prototype, {
     },
 
     _updateTransformationMatrix: function() {
-        var matrix = glmatrix.mat4.create();
+        var t = this._transformation;
 
-        glmatrix.mat4.scale(matrix, matrix, [this._scale, this._scale, 1]);
+        if (!t.dirty()) {
+            return;
+        }
+
+        var scale = t.getScale(),
+            dx = t.getTranslateX(),
+            dy = t.getTranslateY(),
+            matrix = glmatrix.mat4.create();
+
+        glmatrix.mat4.scale(matrix, matrix, [scale, scale, 1]);
+        glmatrix.mat4.translate(matrix, matrix, [dx, dy, 0]);
 
         this._program.use(function() {
             this.uniformMatrix4fv('u_TransformationMatrix', matrix);
         });
+
+        t.clearDirty();
     },
 
 
@@ -152,12 +164,17 @@ utils.extend(Renderer.prototype, {
                 me._vertexBuffer = me._createVertexBuffer();
                 me._textureCoordinateBuffer = me._createTextureCoordinateBuffer();
                 me._updateProjectionMatrix();
-                me._updateTransformationMatrix();
             });
+    },
+
+    getTransformation: function() {
+        return this._transformation;
     },
 
     render: function() {
         var gl = this._gl;
+
+        this._updateTransformationMatrix();
 
         this._program.use(function() {
             this.uniform1i('u_Sampler', TEXTURE_UNIT);
