@@ -130,7 +130,7 @@ utils.extend(Renderer.prototype, {
 
         var scale = t.getScale(),
             dx = t.getTranslateX(),
-            dy = t.getTranslateY(),
+            dy = -t.getTranslateY(),
             matrix = glmatrix.mat4.create();
 
         glmatrix.mat4.scale(matrix, matrix, [scale, scale, 1]);
@@ -143,6 +143,13 @@ utils.extend(Renderer.prototype, {
         t.clearDirty();
     },
 
+    _createTexture: function() {
+        return new Texture(this._gl, this._imageData, TEXTURE_UNIT, {
+            magFilter: this._gl.LINEAR,
+            minFilter: this._gl.LINEAR_MIPMAP_NEAREST,
+            flipY: true
+        });
+    },
 
     init: function() {
         var me = this;
@@ -155,11 +162,7 @@ utils.extend(Renderer.prototype, {
         return me._loadImageData()
             .then(function(imageData) {
                 me._imageData = imageData;
-                me._texture = new Texture(me._gl, imageData, TEXTURE_UNIT, {
-                    magFilter: me._gl.LINEAR,
-                    minFilter: me._gl.LINEAR_MIPMAP_NEAREST,
-                    flipY: true
-                });
+                me._texture = me._createTexture();
 
                 me._vertexBuffer = me._createVertexBuffer();
                 me._textureCoordinateBuffer = me._createTextureCoordinateBuffer();
@@ -182,6 +185,10 @@ utils.extend(Renderer.prototype, {
 
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    },
+
+    getCanvas: function() {
+        return this._canvas;
     }
 });
 

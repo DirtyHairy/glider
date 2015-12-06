@@ -1,3 +1,5 @@
 module.exports = {
-    Renderer: require('./Renderer')
+    Renderer: require('./Renderer'),
+    Controls: require('./Controls'),
+    Controller: require('./Controller')
 };

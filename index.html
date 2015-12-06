@@ -2,16 +2,25 @@
 
 <head>
     <script src="nolayers.js"></script>
+    <style>
+        body {
+            overflow: hidden;
+        }
+    </style>
 </head>
 
 <body>
     <canvas id="viewer-canvas" width="640" height="480"></canvas>
 
     <script>
-        var renderer = new nolayers.Renderer(document.getElementById('viewer-canvas'), 'koala.jpg');
+        var canvas = document.getElementById('viewer-canvas'),
+            renderer = new nolayers.Renderer(canvas, 'koala.jpg');
 
         renderer.init()
             .then(function() {
+                var controller = new nolayers.Controller(renderer),
+                    controls = new nolayers.Controls(canvas, controller);
+
                 renderer.getTransformation()
                     .setScale(0.3)
                     .setTranslateX(-400)
@@ -20,7 +29,7 @@
                 renderer.render();
             })
             .fail(function(err) {
-                console.log('rederer failed to initialize', err);
+                console.log('renderer failed to initialize', err);
             });
     </script>
 </body>

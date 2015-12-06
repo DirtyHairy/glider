@@ -4,6 +4,19 @@ function extend(o, properties) {
     });
 }
 
+function clamp(x, min, max) {
+    if (x < min) {
+        return min;
+    }
+
+    if (x > max) {
+        return max;
+    }
+
+    return x;
+}
+
 module.exports = {
-    extend: extend
+    extend: extend,
+    clamp: clamp
 };
