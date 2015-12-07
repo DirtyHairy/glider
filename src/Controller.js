@@ -27,7 +27,7 @@ utils.extend(Controller.prototype, {
         return this;
     },
 
-    stopBatch: function() {
+    commitBatch: function() {
         if (this._batchId <= 0) {
             return;
         }
@@ -97,7 +97,7 @@ utils.extend(Controller.prototype, {
             .startBatch()
             .rescale(scale)
             .panRelative(centerX * fac, centerY * fac)
-            .stopBatch();
+            .commitBatch();
     },
 
     getScale: function() {

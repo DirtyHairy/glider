@@ -189,6 +189,12 @@ utils.extend(Renderer.prototype, {
 
     getCanvas: function() {
         return this._canvas;
+    },
+
+    applyCanvasResize: function() {
+        this._gl.viewport(0, 0, this._canvas.width, this._canvas.height);
+        this._updateProjectionMatrix();
+        this.render();
     }
 });
 

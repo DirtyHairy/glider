@@ -1,16 +1,18 @@
 <html>
 
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
     <script src="nolayers.js"></script>
     <style>
         body {
             overflow: hidden;
+            margin: 0;
         }
     </style>
 </head>
 
 <body>
-    <canvas id="viewer-canvas" width="640" height="480"></canvas>
+    <canvas id="viewer-canvas" width="10" height="10"></canvas>
 
     <script>
         var canvas = document.getElementById('viewer-canvas'),
@@ -18,15 +20,19 @@
 
         renderer.init()
             .then(function() {
+                function resizeCanvas() {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                    renderer.applyCanvasResize();
+                }
+
                 var controller = new nolayers.Controller(renderer),
                     controls = new nolayers.Controls(canvas, controller);
 
-                renderer.getTransformation()
-                    .setScale(0.3)
-                    .setTranslateX(-400)
-                    .setTranslateY(200);
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
 
-                renderer.render();
+                controller.rescale(0.3);
             })
             .fail(function(err) {
                 console.log('renderer failed to initialize', err);
