@@ -2,7 +2,7 @@
 
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
-    <script src="nolayers.js"></script>
+    <script src="glider.js"></script>
     <style>
         body {
             overflow: hidden;
@@ -16,7 +16,7 @@
 
     <script>
         var canvas = document.getElementById('viewer-canvas'),
-            renderer = new nolayers.Renderer(canvas, 'koala.jpg'),
+            renderer = new glider.Renderer(canvas, 'koala.jpg'),
             controller;
 
         renderer.init()
@@ -29,8 +29,8 @@
 
                 }
 
-                controller = new nolayers.Controller(renderer);
-                var controls = new nolayers.Controls(canvas, controller);
+                controller = new glider.Controller(renderer);
+                var controls = new glider.Controls(canvas, controller);
 
                 resizeCanvas();
                 window.addEventListener('resize', resizeCanvas);

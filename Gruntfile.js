@@ -8,12 +8,12 @@ module.exports = function(grunt) {
         browserify: {
             main: {
                 files: {
-                    'nolayers.js': './src/index.js'
+                    'glider.js': './src/index.js'
                 },
                 options: {
                     browserifyOptions: {
                         debug: true,
-                        standalone: 'nolayers'
+                        standalone: 'glider'
                     },
                     transform: ['brfs']
                 }
