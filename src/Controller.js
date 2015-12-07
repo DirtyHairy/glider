@@ -42,40 +42,34 @@ utils.extend(Controller.prototype, {
         return this;
     },
 
-    panAbsolute: function(panX, panY) {
-        var t = this._renderer.getTransformation(),
-            scale = t.getScale();
+    translateAbsolute: function(dx, dy) {
+        var t = this._renderer.getTransformation();
 
-        t.setTranslateX(panX / scale);
-        t.setTranslateY(panY / scale);
+        t.setTranslateX(dx);
+        t.setTranslateY(dy);
 
         this._render();
 
         return this;
     },
 
-    panRelative: function(dx, dy) {
-        var t = this._renderer.getTransformation(),
-            scale = t.getScale();
+    translateRelative: function(dx, dy) {
+        var t = this._renderer.getTransformation();
 
-        t.setTranslateX(t.getTranslateX() + dx / scale);
-        t.setTranslateY(t.getTranslateY() + dy / scale);
+        t.setTranslateX(t.getTranslateX() + dx);
+        t.setTranslateY(t.getTranslateY() + dy);
 
         this._render();
 
         return this;
     },
 
-    getPanX: function() {
-        var t = this._renderer.getTransformation();
-
-        return t.getTranslateX() * t.getScale();
+    getTranslateX: function() {
+        return this._renderer.getTransformation().getTranslateX();
     },
 
-    getPanY: function() {
-        var t = this._renderer.getTransformation();
-
-        return t.getTranslateY() * t.getScale();
+    getTranslateY: function() {
+        return this._renderer.getTransformation().getTranslateY();
     },
 
     rescale: function(scale) {
@@ -96,8 +90,10 @@ utils.extend(Controller.prototype, {
         this
             .startBatch()
             .rescale(scale)
-            .panRelative(centerX * fac, centerY * fac)
+            .translateRelative(centerX * fac, centerY * fac)
             .commitBatch();
+
+        return this;
     },
 
     getScale: function() {

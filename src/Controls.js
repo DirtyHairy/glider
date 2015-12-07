@@ -6,18 +6,26 @@ function Controls(canvas, controller) {
     this._controller = controller;
     this._manager = new Hammer.Manager(canvas);
 
-    this._manager.add(new Hammer.Pan({
-        event: 'pan',
-        threshold: 2
-    }));
+    var pan = new Hammer.Pan({
+            event: 'pan',
+            threshold: 1
+        }),
+        pinch = new Hammer.Pinch({
+            event: 'pinch'
+        }),
+        tap = new Hammer.Tap({
+            event: 'doubletap',
+            threshold: 100,
+            posThreshold: 100,
+            interval: 200
+        });
 
-    this._manager.add(new Hammer.Pinch({
-        event: 'pinch'
-    }));
+    pan.requireFailure(tap);
+    pinch.requireFailure(tap);
 
-    this._manager.add(new Hammer.Tap({
-        event: 'doubletap'
-    }));
+    this._manager.add(pan);
+    this._manager.add(pinch);
+    this._manager.add(tap);
 
     this._manager.on('pan', this._onPan.bind(this));
     this._manager.on('panstart', this._onPanStart.bind(this));
@@ -42,8 +50,8 @@ utils.extend(Controls.prototype, {
     _panning: false,
     _pinching: false,
     _oldScale: false,
-    _oldPanX: 0,
-    _oldPanY: 0,
+    _oldTranslateX: 0,
+    _oldTranslateY: 0,
 
     _onPan: function(e) {
         e.preventDefault();
@@ -59,8 +67,8 @@ utils.extend(Controls.prototype, {
         e.preventDefault();
 
         this._panning = true;
-        this._oldPanX = this._controller.getPanX();
-        this._oldPanY = this._controller.getPanY();
+        this._oldTranslateX = this._controller.getTranslateX();
+        this._oldTranslateY = this._controller.getTranslateY();
 
         this._applyPan(e);
     },
@@ -81,12 +89,14 @@ utils.extend(Controls.prototype, {
             return;
         }
 
-        this._controller.panAbsolute(this._oldPanX, this._oldPanY);
+        this._controller.translateAbsolute(this._oldTranslateX, this._oldTranslateY);
         this._panning = false;
     },
 
     _applyPan: function(e) {
-        this._controller.panAbsolute(this._oldPanX + e.deltaX, this._oldPanY + e.deltaY);
+        var scale = this._controller.getScale();
+
+        this._controller.translateAbsolute(this._oldTranslateX + e.deltaX/scale, this._oldTranslateY + e.deltaY/scale);
     },
 
     _onPinch: function(e) {
@@ -99,22 +109,12 @@ utils.extend(Controls.prototype, {
         this._applyPinch(e);
     },
 
-    _onPinchMove: function(e) {
-        e.preventDefault();
-
-        if (!this._pinching) {
-            return;
-        }
-
-        this._applyPan(e);
-    },
-
     _onPinchStart: function(e) {
         e.preventDefault();
 
         this._pinching = true;
-        this._oldPanX = this._controller.getPanX();
-        this._oldPanY = this._controller.getPanY();
+        this._oldTranslateX = this._controller.getTranslateX();
+        this._oldTranslateY = this._controller.getTranslateY();
         this._oldScale = this._controller.getScale();
 
         this._applyPinch(e);
@@ -138,7 +138,7 @@ utils.extend(Controls.prototype, {
 
         this._controller
             .startBatch()
-            .panAbsolute(this._oldPanX, this._oldPanY)
+            .translateAbsolute(this._oldTranslateX, this._oldTranslateY)
             .rescale(this._oldScale)
             .commitBatch();
 
@@ -146,20 +146,35 @@ utils.extend(Controls.prototype, {
     },
 
     _applyPinch: function(e) {
+        var newScale = this._oldScale * e.scale;
+
         this._controller
             .startBatch()
-            .rescale(this._oldScale);
+            .rescale(this._oldScale)
+            .translateAbsolute(this._oldTranslateX + e.deltaX/this._oldScale, this._oldTranslateY + e.deltaY/this._oldScale);
 
-        this._applyPan(e);
-        this._applyRescale(this._oldScale * e.scale, e.center.x, e.center.y);
+        this._applyRescale(newScale, e.center.x, e.center.y);
 
-        this._controller.commitBatch();
+        this._controller
+            .rescaleAroundCenter(newScale, e.center.x/newScale, e.center.y/newScale)
+            .commitBatch();
     },
 
     _onWheel: function(e) {
-        var oldScale = this._controller.getScale();
+        var oldScale = this._controller.getScale(),
+            newScale = oldScale - oldScale * e.deltaY / 500;
 
-        this._applyRescale(oldScale - oldScale * e.deltaY / 500, e.clientX, e.clientY);
+        this._applyRescale(newScale, e.clientX, e.clientY);
+    },
+
+
+    _onTap: function(e) {
+
+        if (e.tapCount != 2) {
+            return;
+        }
+
+        this._applyRescale(this._controller.getScale() * 1.3, e.center.x, e.center.y);
     },
 
     _applyRescale: function(scale, clientX, clientY) {
@@ -167,17 +182,9 @@ utils.extend(Controls.prototype, {
 
         this._controller.rescaleAroundCenter(
             scale,
-            clientX - canvasRect.left - canvasRect.width / 2,
-            clientY - canvasRect.top - canvasRect.height / 2
+            (clientX - canvasRect.left - canvasRect.width / 2) / scale,
+            (clientY - canvasRect.top - canvasRect.height / 2) / scale
         );
-    },
-
-    _onTap: function(e) {
-        if (e.tapCount != 2) {
-            return;
-        }
-
-        this._applyRescale(this._controller.getScale() * 1.3, e.center.x, e.center.y);
     }
 });
 
