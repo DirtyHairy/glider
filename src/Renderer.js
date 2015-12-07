@@ -37,6 +37,8 @@ utils.extend(Renderer.prototype, {
 
     _transformation: null,
 
+    _renderPending: false,
+
     _loadImageData: function() {
         var me = this;
 
@@ -151,6 +153,19 @@ utils.extend(Renderer.prototype, {
         });
     },
 
+    _immediateRender: function() {
+        var gl = this._gl;
+
+        this._updateTransformationMatrix();
+
+        this._program.use(function() {
+            this.uniform1i('u_Sampler', TEXTURE_UNIT);
+        });
+
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    },
+
     init: function() {
         var me = this;
 
@@ -175,16 +190,18 @@ utils.extend(Renderer.prototype, {
     },
 
     render: function() {
-        var gl = this._gl;
+        var me = this;
 
-        this._updateTransformationMatrix();
+        if (me._renderPending) {
+            return;
+        }
 
-        this._program.use(function() {
-            this.uniform1i('u_Sampler', TEXTURE_UNIT);
+        requestAnimationFrame(function() {
+            me._renderPending = false;
+            me._immediateRender();
         });
 
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        me._renderPending = true;
     },
 
     getCanvas: function() {
@@ -195,6 +212,14 @@ utils.extend(Renderer.prototype, {
         this._gl.viewport(0, 0, this._canvas.width, this._canvas.height);
         this._updateProjectionMatrix();
         this.render();
+    },
+
+    getImageWidth: function() {
+        return this._imageWidth;
+    },
+
+    getImageHeight: function() {
+        return this._imageHeight;
     }
 });
 

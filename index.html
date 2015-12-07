@@ -16,7 +16,8 @@
 
     <script>
         var canvas = document.getElementById('viewer-canvas'),
-            renderer = new nolayers.Renderer(canvas, 'koala.jpg');
+            renderer = new nolayers.Renderer(canvas, 'koala.jpg'),
+            controller;
 
         renderer.init()
             .then(function() {
@@ -24,10 +25,12 @@
                     canvas.width = window.innerWidth;
                     canvas.height = window.innerHeight;
                     renderer.applyCanvasResize();
+                    controller.clampToScreen();
+
                 }
 
-                var controller = new nolayers.Controller(renderer),
-                    controls = new nolayers.Controls(canvas, controller);
+                controller = new nolayers.Controller(renderer);
+                var controls = new nolayers.Controls(canvas, controller);
 
                 resizeCanvas();
                 window.addEventListener('resize', resizeCanvas);
