@@ -70,6 +70,7 @@ utils.extend(Controls.prototype, {
         this._oldTranslateX = this._controller.getTranslateX();
         this._oldTranslateY = this._controller.getTranslateY();
 
+        this._controller.stopKineticTranslate();
         this._applyPan(e);
     },
 
@@ -80,7 +81,11 @@ utils.extend(Controls.prototype, {
             return;
         }
 
+        var scale = this._controller.getScale();
+
         this._applyPan(e);
+        this._controller.kineticTranslate(-e.velocityX / scale, -e.velocityY / scale);
+
         this._panning = false;
     },
 
@@ -117,6 +122,7 @@ utils.extend(Controls.prototype, {
         this._oldTranslateY = this._controller.getTranslateY();
         this._oldScale = this._controller.getScale();
 
+        this._controller.stopKineticTranslate();
         this._applyPinch(e);
     },
 
@@ -127,7 +133,11 @@ utils.extend(Controls.prototype, {
             return;
         }
 
+        var scale = this._controller.getScale();
+
         this._applyPinch(e);
+        this._controller.kineticTranslate(-e.velocityX / scale, -e.velocityY / scale);
+
         this._pinching = false;
     },
 

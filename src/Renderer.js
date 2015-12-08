@@ -19,6 +19,7 @@ function Renderer(canvas, imageUrl) {
     this._gl = canvas.getContext('webgl');
     this._imageUrl = imageUrl;
     this._transformation = new Transformation();
+    this._animations = [];
 }
 
 utils.extend(Renderer.prototype, {
@@ -38,6 +39,7 @@ utils.extend(Renderer.prototype, {
     _transformation: null,
 
     _renderPending: false,
+    _animations: null,
 
     _loadImageData: function() {
         var me = this;
@@ -166,6 +168,36 @@ utils.extend(Renderer.prototype, {
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     },
 
+    _scheduleAnimations: function() {
+        var me = this;
+
+        requestAnimationFrame(function(timestamp) {
+            var i = 0,
+                len = me._animations.length,
+                render = false;
+
+            while (i < len) {
+                me._animations[i].progress(timestamp);
+
+                if (me._animations[i].finished()) {
+                    len--;
+                    me.removeAnimation(me._animations[i]);
+                } else {
+                    render = render || me._animations[i].render();
+                    i++;
+                }
+            }
+
+            if (render) {
+                me._immediateRender();
+            }
+
+            if (len > 0) {
+                me._scheduleAnimations();
+            }
+        });
+    },
+
     init: function() {
         var me = this;
 
@@ -202,6 +234,8 @@ utils.extend(Renderer.prototype, {
         });
 
         me._renderPending = true;
+
+        return this;
     },
 
     getCanvas: function() {
@@ -212,6 +246,8 @@ utils.extend(Renderer.prototype, {
         this._gl.viewport(0, 0, this._canvas.width, this._canvas.height);
         this._updateProjectionMatrix();
         this.render();
+
+        return this;
     },
 
     getImageWidth: function() {
@@ -220,6 +256,29 @@ utils.extend(Renderer.prototype, {
 
     getImageHeight: function() {
         return this._imageHeight;
+    },
+
+    addAnimation: function(animation) {
+        this._animations.push(animation);
+
+        this._scheduleAnimations();
+
+        return this;
+    },
+
+    removeAnimation: function(animation) {
+        var i = 0,
+            len = this._animations.length;
+
+        for (i = 0; i < len; i++) {
+            if (this._animations[i] === animation) {
+                break;
+            }
+        }
+
+        if (i < len) {
+            this._animations.splice(i, 1);
+        }
     }
 });
 

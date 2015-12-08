@@ -1,4 +1,5 @@
-var utils = require('./utils');
+var utils = require('./utils'),
+    KineticTranslate = require('./KineticTranslate');
 
 function Controller(renderer) {
     this._renderer = renderer;
@@ -9,12 +10,20 @@ utils.extend(Controller.prototype, {
 
     _batchId: 0,
     _renderPending: false,
+    _suspendRender: 0,
 
     _scaleMin: 0.1,
     _scaleMax: 10,
     _clampRelativeBorder: 0.2,
+    _kindeticTranslateTimeConstant: 325,
+
+    _kineticTranslate: null,
 
     _render: function() {
+        if (this._suspendRender > 0) {
+            return;
+        }
+
         if (this._batchId > 0) {
             this._renderPending = true;
         } else {
@@ -64,6 +73,22 @@ utils.extend(Controller.prototype, {
         return this;
     },
 
+    suspendRender: function() {
+        this._suspendRender++;
+
+        return this;
+    },
+
+    resumeRender: function() {
+        this._suspendRender--;
+
+        if (this._suspendRender < 0) {
+            this._suspendRender = 0;
+        }
+
+        return this;
+    },
+
     commitBatch: function() {
         if (this._batchId <= 0) {
             return;
@@ -101,6 +126,24 @@ utils.extend(Controller.prototype, {
         return this;
     },
 
+    kineticTranslate: function(velocityX, velocityY) {
+        this.stopKineticTranslate();
+
+        this._kineticTranslate = new KineticTranslate(
+            this, velocityX, velocityY, this._kindeticTranslateTimeConstant
+        );
+
+        this._renderer.addAnimation(this._kineticTranslate);
+
+        return this;
+    },
+
+    stopKineticTranslate: function() {
+        if (this._kineticTranslate) {
+            this._kineticTranslate.cancel();
+        }
+    },
+
     clampToScreen: function() {
         var t = this._renderer.getTransformation(),
             dx = t.getTranslateX(),
@@ -112,9 +155,7 @@ utils.extend(Controller.prototype, {
             return;
         }
 
-        this
-            .translateAbsolute(cdx, cdy)
-            ._render();
+        this.translateAbsolute(cdx, cdy);
     },
 
     getTranslateX: function() {
