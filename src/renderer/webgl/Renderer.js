@@ -1,9 +1,9 @@
 var q = require('q'),
     glmatrix = require('gl-matrix'),
-    utils = require('./utils'),
+    utils = require('../../utils'),
     Program = require('./glutil/Program'),
     Texture = require('./glutil/Texture'),
-    Transformation = require('./Transformation');
+    Transformation = require('../../Transformation');
 
 var fs = require('fs');
 
@@ -14,11 +14,11 @@ var imageLayerVertexShaderSource =
 
 var TEXTURE_UNIT = 0;
 
-function Renderer(canvas, imageUrl) {
+function Renderer(canvas, imageUrl, transformation) {
     this._canvas = canvas;
     this._gl = canvas.getContext('webgl');
     this._imageUrl = imageUrl;
-    this._transformation = new Transformation();
+    this._transformation = transformation;
     this._animations = [];
 }
 

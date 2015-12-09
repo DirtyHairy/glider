@@ -1,4 +1,4 @@
-var utils = require('../utils');
+var utils = require('../../../utils');
 
 function Program(gl, vertexShaderSource, fragmentShaderSource) {
     this._gl = gl;

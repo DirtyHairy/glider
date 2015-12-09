@@ -16,26 +16,22 @@
 
     <script>
         var canvas = document.getElementById('viewer-canvas'),
-            renderer = new glider.Renderer(canvas, 'koala.jpg'),
-            controller;
+            viewer = new glider.Viewer(canvas, './koala.jpg');
 
-        renderer.init()
+        viewer.init()
             .then(function() {
                 function resizeCanvas() {
                     canvas.width = window.innerWidth;
                     canvas.height = window.innerHeight;
-                    renderer.applyCanvasResize();
-                    controller.clampToScreen();
+                    viewer.getRenderer().applyCanvasResize();
+                    viewer.getController().clampToScreen();
 
                 }
-
-                controller = new glider.Controller(renderer);
-                var controls = new glider.Controls(canvas, controller);
 
                 resizeCanvas();
                 window.addEventListener('resize', resizeCanvas);
 
-                controller.rescale(0.3);
+                viewer.rescale(0.3);
             })
             .fail(function(err) {
                 console.log('renderer failed to initialize', err);
