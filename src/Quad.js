@@ -1,13 +1,14 @@
 var utils = require('./utils'),
-    Observable = require('./Observable');
+    Observable = require('./utils/Observable'),
+    DependencyProvider = require('./utils/DependencyProvider');
 
 function Quad(config) {
-    if (config.hasOwnProperty('x')) {
-        this._x = config.x;
+    if (config.hasOwnProperty('left')) {
+        this._left = config.left;
     }
 
-    if (config.hasOwnProperty('y')) {
-        this._y = config.y;
+    if (config.hasOwnProperty('bottom')) {
+        this._bottom = config.bottom;
     }
 
     if (config.hasOwnProperty('width')) {
@@ -26,44 +27,46 @@ function Quad(config) {
         modified: new Observable()
     };
 
-    Observable.delegate(this);
+    Observable.delegate(this, this.observable);
+
+    this._dependencyProvider = new DependencyProvider(this);
 }
 
 utils.extend(Quad.prototype, {
-    _x: 0,
-    _y: 0,
+    _left: 0,
+    _bottom: 0,
     _width: 0,
     _height: 0,
     _fillColor: null,
 
-    _dirty: true,
+    _dependencyProvider: null,
 
     _notifyChange: function() {
-        this._dirty = true;
+        this._dependencyProvider.bump();
         this.observable.modified.fire();
     },
 
-    setX: function(x) {
-        this._x = x;
+    setLeft: function(left) {
+        this._left = left;
         this._notifyChange();
 
         return this;
     },
 
-    getX: function() {
-        return this._x;
+    getXLeft: function() {
+        return this._left;
     },
 
 
-    setY: function(y) {
-        this._y = y;
+    setBottom: function(bottom) {
+        this._bottom = bottom;
         this._notifyChange();
 
         return this;
     },
 
-    getY: function() {
-        return this._y;
+    getBottom: function() {
+        return this._bottom;
     },
 
 
@@ -100,14 +103,6 @@ utils.extend(Quad.prototype, {
 
     getColor: function() {
         return this._color;
-    },
-
-    dirty: function() {
-        return this._dirty;
-    },
-
-    clearDirty: function() {
-        this._dirty = false;
     }
 });
 

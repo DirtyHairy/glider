@@ -1,4 +1,4 @@
-function Color(r, g, b, alpha) {
+function RGBA(r, g, b, a) {
     this.r = function() {
         return r;
     };
@@ -12,12 +12,12 @@ function Color(r, g, b, alpha) {
     };
 
     this.alpha = function() {
-        return alpha;
+        return a;
     };
 
     this.hasAlpha = function() {
-        return typeof(alpha) !== 'undefined';
+        return true;
     };
 }
 
-module.exports = Color;
+module.exports = RGBA;

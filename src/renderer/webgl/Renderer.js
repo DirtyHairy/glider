@@ -3,7 +3,7 @@ var q = require('q'),
     utils = require('../../utils'),
     Program = require('./glutil/Program'),
     Texture = require('./glutil/Texture'),
-    Transformation = require('../../Transformation');
+    DependencyTracker = require('../../utils/DependencyTracker');
 
 var fs = require('fs');
 
@@ -20,6 +20,7 @@ function Renderer(canvas, imageUrl, transformation) {
     this._imageUrl = imageUrl;
     this._transformation = transformation;
     this._animations = [];
+    this._dependencyTracker = new DependencyTracker();
 }
 
 utils.extend(Renderer.prototype, {
@@ -27,6 +28,7 @@ utils.extend(Renderer.prototype, {
     _imageUrl: null,
     _imageData: null,
     _gl: null,
+    _dependencyTracker: null,
 
     _imageWidth: null,
     _imageHeight: null,
@@ -128,10 +130,6 @@ utils.extend(Renderer.prototype, {
     _updateTransformationMatrix: function() {
         var t = this._transformation;
 
-        if (!t.dirty()) {
-            return;
-        }
-
         var scale = t.getScale(),
             dx = t.getTranslateX(),
             dy = -t.getTranslateY(),
@@ -144,7 +142,7 @@ utils.extend(Renderer.prototype, {
             this.uniformMatrix4fv('u_TransformationMatrix', matrix);
         });
 
-        t.clearDirty();
+        this._dependencyTracker.setCurrent(t);
     },
 
     _createTexture: function() {
@@ -157,6 +155,10 @@ utils.extend(Renderer.prototype, {
 
     _immediateRender: function() {
         var gl = this._gl;
+
+        if (this._dependencyTracker.isCurrent(this._transformation)) {
+            return;
+        }
 
         this._updateTransformationMatrix();
 

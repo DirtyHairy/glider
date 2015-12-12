@@ -1,5 +1,6 @@
 var utils = require('./utils'),
-    Observable = require('./Observable');
+    Observable = require('./utils/Observable'),
+    DependencyProvider = require('./utils/DependencyProvider');
 
 function FeatureSet() {
     this._features = [];
@@ -11,14 +12,16 @@ function FeatureSet() {
     };
 
     Observable.delegate(this);
+
+    this._dependencyProvider = new DependencyProvider(this);
 }
 
 utils.extend(FeatureSet.prototype, {
     _features: null,
-    _dirty: true,
+    _dependencyProvider: null,
 
     _notifyChange: function() {
-        this._dirty = true;
+        this._dependencyProvider.bump();
         this.observable.change.fire();
     },
 

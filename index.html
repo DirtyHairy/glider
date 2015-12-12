@@ -36,6 +36,15 @@
             .fail(function(err) {
                 console.log('renderer failed to initialize', err);
             });
+
+        var features = new glider.FeatureSet();
+        features.add(new glider.Quad({
+            left: -10,
+            bottom: -10,
+            width: 20,
+            height: 20,
+            fillCollor: new glider.RGBA(0, 0, 0, 0.5)
+        }));
     </script>
 </body>
 

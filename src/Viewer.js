@@ -49,9 +49,7 @@ utils.extend(Viewer.prototype, {
 
 function delegate(method, target) {
     Viewer.prototype[method] = function() {
-        Viewer.prototype[method] = function() {
-            return this[target].apply(this[target], arguments);
-        };
+        return this[target][method].apply(this[target], arguments);
     };
 }
 

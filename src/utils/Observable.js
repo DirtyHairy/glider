@@ -1,4 +1,4 @@
-var utils = require('./utils');
+var utils = require('.');
 
 function Observable() {
     this._listeners = [];
@@ -38,25 +38,21 @@ utils.extend(Observable.prototype, {
     }
 });
 
-Observable.delegate = function(instance) {
-    if (typeof(instance.observable) !== 'object') {
-        throw new Error('no observable collection to delegate to');
-    }
-
+Observable.delegate = function(instance, collection) {
     instance.addListener = function(observable, listener) {
-        if (!instance.observable[observable]) {
+        if (!collection[observable]) {
             throw new Error('no observable' + observable);
         }
 
-        instance.observable[observable].addListener(listener);
+        collection[observable].addListener(listener);
     };
 
-    instance.removeoListener = function(observable, listener) {
-        if (!instance.observable[observable]) {
+    instance.removeListener = function(observable, listener) {
+        if (!collection[observable]) {
             throw new Error('no observable ' + observable);
         }
 
-        instance.ovservable[observable].removeListener(listener);
+        collection[observable].removeListener(listener);
     };
 };
 
