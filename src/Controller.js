@@ -1,16 +1,13 @@
 var utils = require('./utils'),
     KineticTranslate = require('./KineticTranslate');
 
-function Controller(renderer) {
-    this._renderer = renderer;
+function Controller(renderControl, transformation) {
+    this._renderControl = renderControl;
+    this._transformation = transformation;
 }
 
 utils.extend(Controller.prototype, {
-    _renderer: null,
-
-    _batchId: 0,
-    _renderPending: false,
-    _suspendRender: 0,
+    _renderControl: null,
 
     _scaleMin: 0.1,
     _scaleMax: 10,
@@ -19,23 +16,12 @@ utils.extend(Controller.prototype, {
 
     _kineticTranslate: null,
 
-    _render: function() {
-        if (this._suspendRender > 0) {
-            return;
-        }
-
-        if (this._batchId > 0) {
-            this._renderPending = true;
-        } else {
-            this._renderer.render();
-        }
-    },
-
     _clampTranslateX: function(dx) {
-        var canvas = this._renderer.getCanvas(),
+        var renderer = this._renderControl.getRenderer(),
+            canvas = renderer.getCanvas(),
             canvasWidth = canvas.width/2,
-            imageWidth = this._renderer.getImageWidth()/2,
-            scale = this._renderer.getTransformation().getScale(),
+            imageWidth = renderer.getImageWidth()/2,
+            scale = this._transformation.getScale(),
             border = canvasWidth * this._clampRelativeBorder;
 
         if (canvasWidth - (dx - imageWidth)*scale < border) {
@@ -50,10 +36,11 @@ utils.extend(Controller.prototype, {
     },
 
     _clampTranslateY: function(dy) {
-        var canvas = this._renderer.getCanvas(),
+        var renderer = this._renderControl.getRenderer(),
+            canvas = renderer.getCanvas(),
             canvasHeight = canvas.height/2,
-            imageHeight = this._renderer.getImageHeight()/2,
-            scale = this._renderer.getTransformation().getScale(),
+            imageHeight = renderer.getImageHeight()/2,
+            scale = this._transformation.getScale(),
             border = canvasHeight * this._clampRelativeBorder;
 
         if (canvasHeight - (dy - imageHeight)*scale < border) {
@@ -67,61 +54,24 @@ utils.extend(Controller.prototype, {
         return dy;
     },
 
-    startBatch: function() {
-        this._batchId++;
-
-        return this;
-    },
-
-    suspendRender: function() {
-        this._suspendRender++;
-
-        return this;
-    },
-
-    resumeRender: function() {
-        this._suspendRender--;
-
-        if (this._suspendRender < 0) {
-            this._suspendRender = 0;
-        }
-
-        return this;
-    },
-
-    commitBatch: function() {
-        if (this._batchId <= 0) {
-            return;
-        }
-
-        this._batchId--;
-
-        if (this._batchId === 0 && this._renderPending) {
-            this._renderer.render();
-            this._renderPending = false;
-        }
-
-        return this;
-    },
-
     translateAbsolute: function(dx, dy) {
-        var t = this._renderer.getTransformation();
+        var t = this._transformation;
 
         t.setTranslateX(this._clampTranslateX(dx));
         t.setTranslateY(this._clampTranslateY(dy));
 
-        this._render();
+        this._renderControl.render();
 
         return this;
     },
 
     translateRelative: function(dx, dy) {
-        var t = this._renderer.getTransformation();
+        var t = this._transformation;
 
         t.setTranslateX(this._clampTranslateX(t.getTranslateX() + dx));
         t.setTranslateY(this._clampTranslateY(t.getTranslateY() + dy));
 
-        this._render();
+        this._renderControl.render();
 
         return this;
     },
@@ -133,7 +83,7 @@ utils.extend(Controller.prototype, {
             this, velocityX, velocityY, this._kindeticTranslateTimeConstant
         );
 
-        this._renderer.addAnimation(this._kineticTranslate);
+        this._renderControl.getRenderer().addAnimation(this._kineticTranslate);
 
         return this;
     },
@@ -145,7 +95,7 @@ utils.extend(Controller.prototype, {
     },
 
     clampToScreen: function() {
-        var t = this._renderer.getTransformation(),
+        var t = this._transformation,
             dx = t.getTranslateX(),
             dy = t.getTranslateY(),
             cdx = this._clampTranslateX(dx),
@@ -159,17 +109,17 @@ utils.extend(Controller.prototype, {
     },
 
     getTranslateX: function() {
-        return this._renderer.getTransformation().getTranslateX();
+        return this._transformation.getTranslateX();
     },
 
     getTranslateY: function() {
-        return this._renderer.getTransformation().getTranslateY();
+        return this._transformation.getTranslateY();
     },
 
     rescale: function(scale) {
-        this._renderer.getTransformation().setScale(utils.clamp(scale, this._scaleMin, this._scaleMax));
+        this._transformation.setScale(utils.clamp(scale, this._scaleMin, this._scaleMax));
 
-        this._render();
+        this._renderControl.render();
 
         return this;
     },
@@ -177,7 +127,7 @@ utils.extend(Controller.prototype, {
     rescaleAroundCenter: function(scale, centerX, centerY) {
         scale = utils.clamp(scale, this._scaleMin, this._scaleMax);
 
-        var t = this._renderer.getTransformation(),
+        var t = this._transformation,
             oldScale = t.getScale(),
             fac = 1 - scale/oldScale;
 
@@ -191,8 +141,12 @@ utils.extend(Controller.prototype, {
     },
 
     getScale: function() {
-        return this._renderer.getTransformation().getScale();
+        return this._transformation.getScale();
     }
 });
+
+utils.delegateFluent(Controller.prototype, '_renderControl', [
+    'startBatch', 'commitBatch', 'suspendRender', 'resumeRender'
+]);
 
 module.exports = Controller;

@@ -29,6 +29,7 @@ utils.extend(Renderer.prototype, {
     _imageData: null,
     _gl: null,
     _dependencyTracker: null,
+    _ready: false,
 
     _imageWidth: null,
     _imageHeight: null,
@@ -216,6 +217,8 @@ utils.extend(Renderer.prototype, {
                 me._vertexBuffer = me._createVertexBuffer();
                 me._textureCoordinateBuffer = me._createTextureCoordinateBuffer();
                 me._updateProjectionMatrix();
+
+                me._ready = true;
             });
     },
 
@@ -226,7 +229,7 @@ utils.extend(Renderer.prototype, {
     render: function() {
         var me = this;
 
-        if (me._renderPending) {
+        if (!me._ready || me._renderPending) {
             return;
         }
 
@@ -281,6 +284,10 @@ utils.extend(Renderer.prototype, {
         if (i < len) {
             this._animations.splice(i, 1);
         }
+    },
+
+    addFeatureSet: function() {
+        
     }
 });
 
