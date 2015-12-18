@@ -22,7 +22,7 @@ module.exports = function(grunt) {
         },
         watch: {
             main: {
-                files: ['src/**/*.js', 'src/shaders/*'],
+                files: ['src/**/*.js', 'src/renderer/webgl/shader/*'],
                 tasks: ['browserify'],
                 options: {
                     spawn: false

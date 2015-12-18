@@ -1,9 +1,12 @@
-var q = require('q'),
-    glmatrix = require('gl-matrix'),
+var pshim = require('es6-promise'),
     utils = require('../../utils'),
     Program = require('./glutil/Program'),
     Texture = require('./glutil/Texture'),
-    DependencyTracker = require('../../utils/DependencyTracker');
+    ProjectionMatrix = require('./ProjectionMatrix'),
+    TransformationMatrix = require('./TransformationMatrix'),
+    DependencyTracker = require('../../utils/DependencyTracker'),
+    GlFeatureSet = require('./GlFeatureSet'),
+    WeakMap = require('es6-weak-map');
 
 var fs = require('fs');
 
@@ -21,6 +24,14 @@ function Renderer(canvas, imageUrl, transformation) {
     this._transformation = transformation;
     this._animations = [];
     this._dependencyTracker = new DependencyTracker();
+
+    this._projectionMatrix = new ProjectionMatrix(canvas.width, canvas.heigth);
+    this._transformationMatrix = new TransformationMatrix(transformation);
+
+    this._featureSets = [];
+    this._glFeatureSets = new WeakMap();
+
+    this._gl.blendFunc(this._gl.SRC_ALPHA, this._gl.ONE_MINUS_SRC_ALPHA);
 }
 
 utils.extend(Renderer.prototype, {
@@ -40,9 +51,14 @@ utils.extend(Renderer.prototype, {
     _texture: null,
 
     _transformation: null,
+    _projectionMatrix: null,
+    _transformationMatrix: null,
 
     _renderPending: false,
     _animations: null,
+
+    _featureSets: null,
+    _glFeatureSets: null,
 
     _loadImageData: function() {
         var me = this;
@@ -82,11 +98,6 @@ utils.extend(Renderer.prototype, {
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
 
-        me._program.use(function() {
-            this.enableVertexAttribArray('a_VertexPosition');
-            this.vertexAttribPointer('a_VertexPosition', 2, gl.FLOAT);
-        });
-
         return vertexBuffer;
     },
 
@@ -108,42 +119,42 @@ utils.extend(Renderer.prototype, {
         gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordinateBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
 
-        me._program.use(function() {
-            this.enableVertexAttribArray('a_TextureCoordinate');
-            this.vertexAttribPointer('a_TextureCoordinate', 2, gl.FLOAT);
-        });
-
         return textureCoordinateBuffer;
     },
 
+    _rebindBuffers: function() {
+        var me = this,
+            gl = me._gl;
+
+        me._program.use(function() {
+            gl.bindBuffer(gl.ARRAY_BUFFER, me._vertexBuffer);
+            this.enableVertexAttribArray('a_VertexPosition');
+            this.vertexAttribPointer('a_VertexPosition', 2, gl.FLOAT);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, me._textureCoordinateBuffer);
+            this.enableVertexAttribArray('a_TextureCoordinate');
+            this.vertexAttribPointer('a_TextureCoordinate', 2, gl.FLOAT);
+        });
+    },
+
     _updateProjectionMatrix: function() {
-        var width = this._canvas.width,
-            height = this._canvas.height,
-            matrix = glmatrix.mat4.create();
+        var me = this;
 
-        glmatrix.mat4.ortho(matrix, -width/2, width/2, -height/2, height/2, 0, 1);
-
-        this._program.use(function() {
-            this.uniformMatrix4fv('u_ProjectionMatrix', matrix);
+        me._dependencyTracker.update(me._projectionMatrix, function() {
+            me._program.use(function() {
+                this.uniformMatrix4fv('u_ProjectionMatrix', me._projectionMatrix.getMatrix());
+            });
         });
     },
 
     _updateTransformationMatrix: function() {
-        var t = this._transformation;
+        var me = this;
 
-        var scale = t.getScale(),
-            dx = t.getTranslateX(),
-            dy = -t.getTranslateY(),
-            matrix = glmatrix.mat4.create();
-
-        glmatrix.mat4.scale(matrix, matrix, [scale, scale, 1]);
-        glmatrix.mat4.translate(matrix, matrix, [dx, dy, 0]);
-
-        this._program.use(function() {
-            this.uniformMatrix4fv('u_TransformationMatrix', matrix);
+        me._dependencyTracker.update(me._transformationMatrix, function() {
+            me._program.use(function() {
+                this.uniformMatrix4fv('u_TransformationMatrix', me._transformationMatrix.getMatrix());
+            });
         });
-
-        this._dependencyTracker.setCurrent(t);
     },
 
     _createTexture: function() {
@@ -155,20 +166,43 @@ utils.extend(Renderer.prototype, {
     },
 
     _immediateRender: function() {
-        var gl = this._gl;
+        var me = this,
+            gl = this._gl,
+            isCurrent,
+            i;
 
-        if (this._dependencyTracker.isCurrent(this._transformation)) {
+        isCurrent = me._dependencyTracker.isCurrent(me._projectionMatrix) &&
+            me._dependencyTracker.isCurrent(me._transformationMatrix);
+
+        for (i = 0; i < me._featureSets.length; i++) {
+            if (!isCurrent) {
+                break;
+            }
+
+            isCurrent = isCurrent && me._dependencyTracker.isCurrent(me._featureSets[i]);
+        }
+
+        if (isCurrent) {
             return;
         }
 
-        this._updateTransformationMatrix();
+        me._updateProjectionMatrix();
+        me._updateTransformationMatrix();
 
-        this._program.use(function() {
+        me._program.use(function() {
             this.uniform1i('u_Sampler', TEXTURE_UNIT);
         });
 
+        gl.disable(gl.BLEND);
         gl.clear(gl.COLOR_BUFFER_BIT);
+
+        me._rebindBuffers();
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+        gl.enable(gl.BLEND);
+        for (i = 0; i < me._featureSets.length; i++) {
+            me._glFeatureSets.get(me._featureSets[i]).render();
+        }
     },
 
     _scheduleAnimations: function() {
@@ -229,7 +263,7 @@ utils.extend(Renderer.prototype, {
     render: function() {
         var me = this;
 
-        if (!me._ready || me._renderPending) {
+        if (!me._ready || me._renderPending || (me._animations && me._animations.length > 0)) {
             return;
         }
 
@@ -249,7 +283,10 @@ utils.extend(Renderer.prototype, {
 
     applyCanvasResize: function() {
         this._gl.viewport(0, 0, this._canvas.width, this._canvas.height);
-        this._updateProjectionMatrix();
+        this._projectionMatrix
+            .setWidth(this._canvas.width)
+            .setHeight(this._canvas.height);
+
         this.render();
 
         return this;
@@ -272,40 +309,43 @@ utils.extend(Renderer.prototype, {
     },
 
     removeAnimation: function(animation) {
-        var i = 0,
-            len = this._animations.length;
+        var i = this._animations.indexOf(animation);
 
-        for (i = 0; i < len; i++) {
-            if (this._animations[i] === animation) {
-                break;
-            }
-        }
-
-        if (i < len) {
+        if (i >= 0) {
             this._animations.splice(i, 1);
         }
     },
 
-    addFeatureSet: function() {
-        
+    addFeatureSet: function(featureSet) {
+        this._featureSets.push(featureSet);
+        this._glFeatureSets.set(featureSet,
+            new GlFeatureSet(this._gl, featureSet, this._projectionMatrix, this._transformationMatrix));
+    },
+
+    removeFeatureSet: function(featureSet) {
+        var i = this._featureSets.indexOf(featureSet);
+
+        if (i >= 0) {
+            this._featureSets.splice(i, 1);
+            this._glFeatureSets.delete(featureSet);
+        }
     }
 });
 
 module.exports = Renderer;
 
 function loadImage(url) {
-    var image = new Image(),
-        deferred = q.defer();
+    var image = new Image();
 
-    image.addEventListener('load', function() {
-        deferred.resolve(image);
+    return new pshim.Promise(function(resolve, reject) {
+        image.addEventListener('load', function() {
+            resolve(image);
+        });
+
+        image.addEventListener('error', function() {
+            reject(new Error('image load for ' + url + ' failed'));
+        });
+
+        image.src = url;
     });
-
-    image.addEventListener('error', function() {
-        deferred.reject(new Error('image load for ' + url + ' failed'));
-    });
-
-    image.src = url;
-
-    return deferred.promise;
 }

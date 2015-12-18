@@ -10,7 +10,7 @@ var SCOPE;
 })();
 
 utils.extend(Observable.prototype, {
-    addLister: function(listener) {
+    addListener: function(listener) {
         this._listeners.push(listener);
 
         return listener;

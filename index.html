@@ -19,31 +19,34 @@
             viewer = new glider.Viewer(canvas, './koala.jpg');
 
         viewer.init()
-            .then(function() {
-                function resizeCanvas() {
-                    canvas.width = window.innerWidth;
-                    canvas.height = window.innerHeight;
-                    viewer.getRenderer().applyCanvasResize();
-                    viewer.getController().clampToScreen();
+            .then(
+                function() {
+                    function resizeCanvas() {
+                        canvas.width = window.innerWidth;
+                        canvas.height = window.innerHeight;
+                        viewer.getRenderer().applyCanvasResize();
+                        viewer.getController().clampToScreen();
 
+                    }
+
+                    resizeCanvas();
+                    window.addEventListener('resize', resizeCanvas);
+
+                    viewer.rescale(0.3);
+                },
+                function(err) {
+                    console.log('renderer failed to initialize', err);
                 }
-
-                resizeCanvas();
-                window.addEventListener('resize', resizeCanvas);
-
-                viewer.rescale(0.3);
-            })
-            .fail(function(err) {
-                console.log('renderer failed to initialize', err);
-            });
+            );
 
         var features = new glider.FeatureSet();
+
         features.add(new glider.Quad({
             left: -10,
             bottom: -10,
-            width: 20,
-            height: 20,
-            fillCollor: new glider.RGBA(0, 0, 0, 0.5)
+            width: 100,
+            height: 100,
+            fillColor: new glider.RGBA(0., 0, 0, 0.4)
         }));
 
         viewer.addFeatureSet(features);

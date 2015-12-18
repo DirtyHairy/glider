@@ -1,8 +1,14 @@
 var utils = require('./utils'),
-    DependencyProvider = require('./utils/DependencyProvider');
+    DependencyProvider = require('./utils/DependencyProvider'),
+    Observable = require('./utils/Observable');
 
 function Transformation() {
     this._dependencyProvider = new DependencyProvider(this);
+    this.observable = {
+        change: new Observable()
+    };
+
+    Observable.delegate(this, this.observable);
 }
 
 utils.extend(Transformation.prototype, {
@@ -11,23 +17,28 @@ utils.extend(Transformation.prototype, {
     _translateY: 0,
     _dependencyProvider: null,
 
+    _notifyChange: function() {
+        this._dependencyProvider.bump();
+        this.observable.change.fire();
+    },
+
     setScale: function(scale) {
         this._scale = scale;
-        this._dependencyProvider.bump();
+        this._notifyChange();
 
         return this;
     },
 
     setTranslateX: function(dx) {
         this._translateX = dx;
-        this._dependencyProvider.bump();
+        this._notifyChange();
 
         return this;
     },
 
     setTranslateY: function(dy) {
         this._translateY = dy;
-        this._dependencyProvider.bump();
+        this._notifyChange();
 
         return this;
     },

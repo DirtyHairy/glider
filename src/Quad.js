@@ -20,11 +20,11 @@ function Quad(config) {
     }
 
     if (config.hasOwnProperty('fillColor')) {
-        this._height = config.fillColor;
+        this._fillColor = config.fillColor;
     }
 
     this.observable = {
-        modified: new Observable()
+        change: new Observable()
     };
 
     Observable.delegate(this, this.observable);
@@ -43,7 +43,7 @@ utils.extend(Quad.prototype, {
 
     _notifyChange: function() {
         this._dependencyProvider.bump();
-        this.observable.modified.fire();
+        this.observable.change.fire();
     },
 
     setLeft: function(left) {
@@ -53,7 +53,7 @@ utils.extend(Quad.prototype, {
         return this;
     },
 
-    getXLeft: function() {
+    getLeft: function() {
         return this._left;
     },
 
@@ -94,15 +94,15 @@ utils.extend(Quad.prototype, {
     },
 
 
-    setColor: function(color) {
-        this._color = color;
+    setFillColor: function(color) {
+        this._fillColor = color;
         this._notifyChange();
 
         return this;
     },
 
-    getColor: function() {
-        return this._color;
+    getFillColor: function() {
+        return this._fillColor;
     }
 });
 
