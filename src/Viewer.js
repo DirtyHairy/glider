@@ -11,6 +11,8 @@ function Viewer(canvas, imageUrl) {
     this._renderer = new WebglRenderer(canvas, imageUrl, this._transformation);
     this._renderControl = new RenderControl(this._renderer);
     this._featureSets = [];
+
+    this._readyPromise = this._init();
 }
 
 utils.extend(Viewer.prototype, {
@@ -20,14 +22,17 @@ utils.extend(Viewer.prototype, {
     _controller: null,
     _controls: null,
     _featureSets: null,
+    _readyPromise: null,
 
-    init: function() {
+    _init: function() {
         var me = this;
 
-        return me._renderer.init()
+        return me._renderer.ready()
             .then(function() {
                 me._controller = new Controller(me._renderControl, me._transformation);
                 me._controls = new Controls(me._canvas, me._controller);
+                
+                me._renderControl.render();
             });
     },
 
@@ -57,6 +62,16 @@ utils.extend(Viewer.prototype, {
         this._renderControl.render();
 
         return this;
+    },
+
+    ready: function() {
+        return this._readyPromise;
+    },
+
+    applyCanvasResize: function() {
+        this._renderer.applyCanvasResize();
+        this._controller.clampToScreen();
+        this._renderControl.render();
     }
 });
 

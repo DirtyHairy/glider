@@ -18,15 +18,13 @@
         var canvas = document.getElementById('viewer-canvas'),
             viewer = new glider.Viewer(canvas, './koala.jpg');
 
-        viewer.init()
+        viewer.ready()
             .then(
                 function() {
                     function resizeCanvas() {
                         canvas.width = window.innerWidth;
                         canvas.height = window.innerHeight;
-                        viewer.getRenderer().applyCanvasResize();
-                        viewer.getController().clampToScreen();
-
+                        viewer.applyCanvasResize();
                     }
 
                     resizeCanvas();
