@@ -7,6 +7,7 @@ function ProjectionMatrix(width, height) {
     this._height = height;
     this._recalculationRequired = true;
     this._dependencyProvider = new DependencyProvider(this);
+    this._matrix = glmatrix.mat4.create();
 }
 
 utils.extend(ProjectionMatrix.prototype, {
@@ -43,7 +44,7 @@ utils.extend(ProjectionMatrix.prototype, {
 
     getMatrix: function() {
         if (this._recalculationRequired) {
-            this._matrix = glmatrix.mat4.create();
+            glmatrix.mat4.identity(this._matrix);
 
             glmatrix.mat4.ortho(this._matrix, -this._width/2, this._width/2,
                 -this._height/2, this._height/2, 0, 1);

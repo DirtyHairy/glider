@@ -58,6 +58,25 @@ utils.extend(Program.prototype, {
         if (cb) {
             cb.apply(this._boundContext);
         }
+    },
+
+    destroy: function() {
+        var gl = this._gl;
+
+        if (this._vertexShader) {
+            gl.deleteShader(this._vertexShader);
+            this._vertexShader = null;
+        }
+
+        if (this._fragmentShader) {
+            gl.deleteShader(this._fragmentShader);
+            this._fragmentShader = null;
+        }
+
+        if (this._program) {
+            gl.deleteProgram(this._program);
+            this._program = null;
+        }
     }
 });
 

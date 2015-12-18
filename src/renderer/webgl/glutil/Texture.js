@@ -47,6 +47,15 @@ utils.extend(Texture.prototype, {
 
         gl.activeTexture(gl['TEXTURE' + textureUnit]);
         gl.bindTexture(gl.TEXTURE_2D, this._texture);
+    },
+
+    destroy: function() {
+        var gl = this._gl;
+
+        if (this._texture) {
+            gl.deleteTexture(this._texture);
+            this._texture = null;
+        }
     }
 });
 

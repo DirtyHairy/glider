@@ -37,17 +37,31 @@
                 }
             );
 
-        var features = new glider.FeatureSet();
+        var features = new glider.FeatureSet(),
+            feature = new glider.Quad({
+                left: 0,
+                bottom: 0,
+                width: 100,
+                height: 100,
+                fillColor: new glider.RGBA(0., 0, 0, 0.4)
+            });
 
-        features.add(new glider.Quad({
-            left: -10,
-            bottom: -10,
-            width: 100,
-            height: 100,
-            fillColor: new glider.RGBA(0., 0, 0, 0.4)
-        }));
+        features.add(feature);
+
+        (function() {
+            var ref = Date.now();
+
+            setInterval(function() {
+                var delta = Date.now() - ref;
+
+                feature
+                    .setLeft(100 * Math.sin(2 * Math.PI / 5000 * delta))
+                    .setBottom(100 * Math.cos(2 * Math.PI / 5000 * delta));
+            }, 10)
+        })();
 
         viewer.addFeatureSet(features);
+
     </script>
 </body>
 

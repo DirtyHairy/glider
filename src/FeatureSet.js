@@ -12,7 +12,7 @@ function FeatureSet() {
         change: new Observable()
     };
 
-    Observable.delegate(this);
+    Observable.delegate(this, this.observable);
 
     this._featureContext = new WeakMap();
 
@@ -62,6 +62,19 @@ utils.extend(FeatureSet.prototype, {
     _onFeatureChange: function(feature) {
         this._dependencyProvider.bump();
         this.observable.change.fire(feature);
+    },
+
+    destroy: function() {
+        var me = this;
+
+        if (me._features) {
+            me._features.forEach(function(feature) {
+                me._featureContext.get(feature).destroy();
+                utils.destroy(feature);
+            });
+
+            me._features = null;
+        }
     }
 });
 

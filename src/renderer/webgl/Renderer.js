@@ -40,11 +40,13 @@ utils.extend(Renderer.prototype, {
     _featureSets: null,
     _glFeatureSets: null,
 
+    _destroyed: false,
+
     _immediateRender: function() {
         var gl = this._gl,
             i;
 
-        if (this._isFramebufferCurrent()) {
+        if (this._destroyed || this._isFramebufferCurrent()) {
             return;
         }
 
@@ -101,7 +103,7 @@ utils.extend(Renderer.prototype, {
                 me._immediateRender();
             }
 
-            if (len > 0) {
+            if (len > 0 && ! me._destroyed) {
                 me._scheduleAnimations();
             }
         });
@@ -172,12 +174,28 @@ utils.extend(Renderer.prototype, {
 
         if (i >= 0) {
             this._featureSets.splice(i, 1);
+            this._glFeatureSets.get(featureSet).destroy();
             this._glFeatureSets.delete(featureSet);
         }
     },
 
     ready: function() {
         return this._imageLayer.ready();
+    },
+
+    destroy: function() {
+        this._imageLayer = utils.destroy(this._imageLayer);
+        this._transformationMatrix = utils.destroy(this._transformationMatrix);
+        this._projectionMatrix = utils.destroy(this._projectionMatrix);
+
+        if (this._featureSets) {
+            this._featureSets.forEach(function(featureSet) {
+                utils.destroy(this._glFeatureSets.get(featureSet));
+                this._glFeatureSets.delete(featureSet);
+            }, this);
+        }
+
+        this._destroyed = true;
     }
 });
 

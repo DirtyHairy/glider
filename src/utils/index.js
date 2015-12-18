@@ -42,9 +42,18 @@ function delegateFluent(proto, target, method) {
     proto[method] = new Function(functionBody); // jshint ignore: line
 }
 
+function destroy(victim) {
+    if (victim && victim.destroy) {
+        victim.destroy();
+    }
+
+    return null;
+}
+
 module.exports = {
     extend: extend,
     clamp: clamp,
     delegate: delegate,
-    delegateFluent: delegateFluent
+    delegateFluent: delegateFluent,
+    destroy: destroy
 };

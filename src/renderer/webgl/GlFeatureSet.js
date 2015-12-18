@@ -138,6 +138,22 @@ utils.extend(GlFeatureSet.prototype, {
 
         me._rebindBuffers();
         gl.drawArrays(gl.TRIANGLES, 0, me._featureSet.count() * 6);
+    },
+
+    destroy: function() {
+        var gl = this._gl;
+
+        this._program = utils.destroy(this._program);
+
+        if (this._vertexPositionBuffer) {
+            gl.deleteBuffer(this._vertexPositionBuffer);
+            this._vertexPositionBuffer = null;
+        }
+
+        if (this._vertexColorBuffer) {
+            gl.deleteBuffer(this._vertexColorBuffer);
+            this._vertexPositionBuffer = null;
+        }
     }
 });
 

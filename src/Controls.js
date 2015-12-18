@@ -39,12 +39,13 @@ function Controls(canvas, controller) {
 
     this._manager.on('doubletap', this._onTap.bind(this));
 
-    canvas.addEventListener('wheel', this._onWheel.bind(this));
+    canvas.addEventListener('wheel', this._canvasListener = this._onWheel.bind(this));
 }
 
 utils.extend(Controls.prototype, {
     _controller: null,
     _canvas: null,
+    _canvasListener: null,
     _manager: null,
 
     _panning: false,
@@ -195,6 +196,15 @@ utils.extend(Controls.prototype, {
             (clientX - canvasRect.left - canvasRect.width / 2) / scale,
             (clientY - canvasRect.top - canvasRect.height / 2) / scale
         );
+    },
+
+    destroy: function() {
+        this._manager = utils.destroy(this._manager);
+
+        if (this._canvasListener) {
+            this._canvas.removeEventListener(this._canvasListener);
+            this._canvasListener = null;
+        }
     }
 });
 

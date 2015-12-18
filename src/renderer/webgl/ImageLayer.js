@@ -185,6 +185,23 @@ utils.extend(ImageLayer.prototype, {
 
     isReady: function() {
         return this._isReady;
+    },
+
+    destroy: function() {
+        var gl = this._gl;
+
+        this._program = utils.destroy(this._program);
+        this._texture = utils.destroy(this._texture);
+
+        if (this._vertexBuffer) {
+            gl.deleteBuffer(this._vertexBuffer);
+            this._vertexBuffer = null;
+        }
+
+        if (this._textureCoordinateBuffer) {
+            gl.deleteBuffer(this._textureCoordinateBuffer);
+            this._textureCoordinateBuffer = null;
+        }
     }
 });
 
