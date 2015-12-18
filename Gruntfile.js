@@ -3,6 +3,7 @@
 module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-browserify');
     grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.loadNpmTasks('grunt-contrib-connect');
 
     grunt.initConfig({
         browserify: {
@@ -27,8 +28,17 @@ module.exports = function(grunt) {
                     spawn: false
                 }
             }
+        },
+        connect: {
+            main: {
+                options: {
+                    port: 2718
+                }
+            }
         }
     });
 
     grunt.registerTask('default', ['browserify']);
+    grunt.registerTask('devel', ['browserify', 'connect', 'watch']);
+
 };
