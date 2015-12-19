@@ -4,8 +4,8 @@ var utils = require('../../utils'),
 
 var fs = require('fs');
 
-var featureSetVertexShadeSource = fs.readFileSync(__dirname + '/shader/feature.vsh').toString(),
-    featureSetFragmentShaderSource = fs.readFileSync(__dirname + '/shader/feature.fsh').toString();
+var featureSetVertexShadeSource = fs.readFileSync(__dirname + '/shader/feature.vsh', 'utf8'),
+    featureSetFragmentShaderSource = fs.readFileSync(__dirname + '/shader/feature.fsh', 'utf8');
 
 function GlFeatureSet(gl, featureSet, projectionMatrix, transformationMatrix) {
     this._gl = gl;

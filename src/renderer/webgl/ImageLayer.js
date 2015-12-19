@@ -7,9 +7,9 @@ var Promise = require('es6-promise').Promise,
 var fs = require('fs');
 
 var imageLayerVertexShaderSource =
-        fs.readFileSync(__dirname + '/shader/imagelayer.vsh').toString(),
+        fs.readFileSync(__dirname + '/shader/imagelayer.vsh', 'utf8'),
     imageLayerFragmentShaderSource =
-        fs.readFileSync(__dirname + '/shader/imagelayer.fsh').toString();
+        fs.readFileSync(__dirname + '/shader/imagelayer.fsh', 'utf8');
 
 var TEXTURE_UNIT = 0;
 

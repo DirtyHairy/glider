@@ -1,4 +1,4 @@
-var glmatrix = require('gl-matrix'),
+var mat4 = require('gl-matrix-mat4'),
     utils = require('../../utils'),
     DependencyProvider = require('../../utils/DependencyProvider'),
     DependencyTracker = require('../../utils/DependencyTracker');
@@ -7,7 +7,7 @@ function TransformationMatrix(transformation) {
     this._transformation = transformation;
     this._dependencyProvider = new DependencyProvider(this);
     this._dependencyTracker = new DependencyTracker(this);
-    this._matrix = glmatrix.mat4.create();
+    this._matrix = mat4.create();
 
     this._handlers = [
         this._transformation.observable.change.addListener(this._onTransformationChange.bind(this))
@@ -33,10 +33,10 @@ utils.extend(TransformationMatrix.prototype, {
                 dx = t.getTranslateX(),
                 dy = -t.getTranslateY();
 
-            glmatrix.mat4.identity(this._matrix);
+            mat4.identity(this._matrix);
 
-            glmatrix.mat4.scale(this._matrix, this._matrix, [scale, scale, 1]);
-            glmatrix.mat4.translate(this._matrix, this._matrix, [dx, dy, 0]);
+            mat4.scale(this._matrix, this._matrix, [scale, scale, 1]);
+            mat4.translate(this._matrix, this._matrix, [dx, dy, 0]);
 
             this._dependencyTracker.setCurrent(this._transformation);
         }
