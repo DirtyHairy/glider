@@ -3,7 +3,7 @@ var WebglRenderer = require('./renderer/webgl/Renderer'),
     Controller = require('./Controller'),
     Controls = require('./Controls'),
     RenderControl = require('./RenderControl'),
-    WeakMap = require('es6-weak-map'),
+    ListenerGroup = require('./utils/ListenerGroup'),
     utils = require('./utils');
 
 function Viewer(canvas, imageUrl) {
@@ -12,7 +12,7 @@ function Viewer(canvas, imageUrl) {
     this._renderer = new WebglRenderer(canvas, imageUrl, this._transformation);
     this._renderControl = new RenderControl(this._renderer);
     this._featureSets = [];
-    this._featureSetContext = new WeakMap();
+    this._listeners = new ListenerGroup();
 
     this._readyPromise = this._init();
 }
@@ -25,7 +25,7 @@ utils.extend(Viewer.prototype, {
     _controls: null,
     _featureSets: null,
     _readyPromise: null,
-    _featureSetContext: null,
+    _listeners: null,
 
     _init: function() {
         var me = this;
@@ -64,9 +64,15 @@ utils.extend(Viewer.prototype, {
     },
 
     addFeatureSet: function(featureSet) {
+        var changeListener = this._onFeatureSetChange.bind(this, featureSet);
+
         this._featureSets.push();
         this._renderer.addFeatureSet(featureSet);
-        this._featureSetContext[featureSet] = new FeatureSetContext(this, featureSet);
+
+        this._listeners
+            .add(featureSet, 'add', changeListener)
+            .add(featureSet, 'remove', changeListener)
+            .add(featureSet, 'change', changeListener);
 
         this._renderControl.render();
 
@@ -77,9 +83,8 @@ utils.extend(Viewer.prototype, {
         var i = this._featureSets.indexOf(featureSet);
 
         if (i >= 0) {
-            this._featureSetContext.get(featureSet).destroy();
-            this._featureSetContext.delete(featureSet);
             this._featureSets.splice(i, 1);
+            this._listeners.removeTarget(featureSet);
 
             this._renderControl.render();
         }
@@ -105,8 +110,7 @@ utils.extend(Viewer.prototype, {
 
         if (me._featureSets) {
             me._featureSets.forEach(function(featureSet) {
-                this._featureSetContext.get(featureSet).destroy();
-                this._featureSetContext.delete(featureSet);
+                me._listeners.removeTarget(featureSet);
                 utils.destroy(featureSet.destroy);
             });
 
@@ -128,26 +132,3 @@ utils.delegateFluent(Viewer.prototype, '_renderControl', [
 ]);
 
 module.exports = Viewer;
-
-function FeatureSetContext(viewer, featureSet) {
-    this._featureSet = featureSet;
-
-    this._featureSetListeners = {
-        add: featureSet.addListener('add', viewer._onFeatureSetChange.bind(viewer, featureSet)),
-        remove: featureSet.addListener('remove', viewer._onFeatureSetChange.bind(viewer, featureSet)),
-        change: featureSet.addListener('change', viewer._onFeatureSetChange.bind(viewer, featureSet))
-    };
-}
-
-utils.extend(FeatureSetContext.prototype, {
-    _featureSet: null,
-    _featreSetListeners: null,
-
-    destroy: function() {
-        var me = this;
-
-        Object.keys(me._featureSetListeners).forEach(function(event) {
-            me.featureSet.removeListener(event, me._featureSetListeners[event]);
-        });
-    }
-});

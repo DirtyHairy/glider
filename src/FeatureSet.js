@@ -1,7 +1,7 @@
 var utils = require('./utils'),
     Observable = require('./utils/Observable'),
     DependencyProvider = require('./utils/DependencyProvider'),
-    WeakMap = require('es6-weak-map');
+    ListenerGroup = require('./utils/ListenerGroup');
 
 function FeatureSet() {
     this._features = [];
@@ -14,7 +14,7 @@ function FeatureSet() {
 
     Observable.delegate(this, this.observable);
 
-    this._featureContext = new WeakMap();
+    this._listeners = new ListenerGroup();
 
     this._dependencyProvider = new DependencyProvider(this);
 }
@@ -22,11 +22,11 @@ function FeatureSet() {
 utils.extend(FeatureSet.prototype, {
     _features: null,
     _dependencyProvider: null,
-    _featureContext: null,
+    _listeners: null,
 
     add: function(feature) {
         this._features.push(feature);
-        this._featureContext.set(feature, new FeatureContext(this, feature));
+        this._listeners.add(feature, 'change', this._onFeatureChange.bind(this, feature));
 
         this._dependencyProvider.bump();
         this.observable.add.fire(feature);
@@ -39,8 +39,7 @@ utils.extend(FeatureSet.prototype, {
 
         if (i >= 0) {
             this._features.splice(i, 1);
-            this._featureContext.get(feature).destroy();
-            this._featureContext.delete(feature);
+            this._listeners.removeTarget(feature);
 
             this._dependencyProvider.bump();
             this.observable.remove.fire(feature);
@@ -69,7 +68,7 @@ utils.extend(FeatureSet.prototype, {
 
         if (me._features) {
             me._features.forEach(function(feature) {
-                me._featureContext.get(feature).destroy();
+                me._listeners.removeTarget(feature);
                 utils.destroy(feature);
             });
 
@@ -79,24 +78,3 @@ utils.extend(FeatureSet.prototype, {
 });
 
 module.exports = FeatureSet;
-
-function FeatureContext(featureSet, feature) {
-    this._listeners = {
-        change: feature.addListener('change', featureSet._onFeatureChange.bind(featureSet, feature))
-    };
-}
-
-utils.extend(FeatureContext.prototype, {
-    _feature: null,
-    _listeners: null,
-
-    destroy: function() {
-        var me = this;
-
-        Object.keys(me._listeners).forEach(function(event) {
-            me._feature.removeListener(event, me._listeners[event]);
-        });
-
-        me._feature = me._listeners = null;
-    }
-});
