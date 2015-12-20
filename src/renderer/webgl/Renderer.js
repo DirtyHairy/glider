@@ -113,7 +113,7 @@ utils.extend(Renderer.prototype, {
         var me = this;
 
         if (!me._imageLayer.isReady() || me._renderPending || (me._animations && me._animations.length > 0)) {
-            return;
+            return this;
         }
 
         requestAnimationFrame(function() {
@@ -161,12 +161,16 @@ utils.extend(Renderer.prototype, {
         if (i >= 0) {
             this._animations.splice(i, 1);
         }
+
+        return this;
     },
 
     addFeatureSet: function(featureSet) {
         this._featureSets.push(featureSet);
         this._glFeatureSets.set(featureSet,
             new GlFeatureSet(this._gl, featureSet, this._projectionMatrix, this._transformationMatrix));
+
+        return this;
     },
 
     removeFeatureSet: function(featureSet) {
@@ -177,6 +181,8 @@ utils.extend(Renderer.prototype, {
             this._glFeatureSets.get(featureSet).destroy();
             this._glFeatureSets.delete(featureSet);
         }
+
+        return this;
     },
 
     ready: function() {
@@ -193,6 +199,8 @@ utils.extend(Renderer.prototype, {
                 utils.destroy(this._glFeatureSets.get(featureSet));
                 this._glFeatureSets.delete(featureSet);
             }, this);
+
+            this._featureSets = null;
         }
 
         this._destroyed = true;

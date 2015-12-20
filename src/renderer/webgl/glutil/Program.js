@@ -63,6 +63,11 @@ utils.extend(Program.prototype, {
     destroy: function() {
         var gl = this._gl;
 
+        if (this._program) {
+            gl.deleteProgram(this._program);
+            this._program = null;
+        }
+
         if (this._vertexShader) {
             gl.deleteShader(this._vertexShader);
             this._vertexShader = null;
@@ -71,11 +76,6 @@ utils.extend(Program.prototype, {
         if (this._fragmentShader) {
             gl.deleteShader(this._fragmentShader);
             this._fragmentShader = null;
-        }
-
-        if (this._program) {
-            gl.deleteProgram(this._program);
-            this._program = null;
         }
     }
 });

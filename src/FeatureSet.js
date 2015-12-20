@@ -15,7 +15,6 @@ function FeatureSet() {
     Observable.delegate(this, this.observable);
 
     this._listeners = new ListenerGroup();
-
     this._dependencyProvider = new DependencyProvider(this);
 }
 
@@ -23,6 +22,12 @@ utils.extend(FeatureSet.prototype, {
     _features: null,
     _dependencyProvider: null,
     _listeners: null,
+    
+    _onFeatureChange: function(feature) {
+        this._dependencyProvider.bump();
+        this.observable.change.fire(feature);
+    },
+
 
     add: function(feature) {
         this._features.push(feature);
@@ -56,11 +61,6 @@ utils.extend(FeatureSet.prototype, {
         this._features.forEach(cb, scope);
 
         return this;
-    },
-
-    _onFeatureChange: function(feature) {
-        this._dependencyProvider.bump();
-        this.observable.change.fire(feature);
     },
 
     destroy: function() {

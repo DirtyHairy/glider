@@ -47,7 +47,8 @@ utils.extend(RenderControl.prototype, {
 
     commitBatch: function() {
         if (this._batchId <= 0) {
-            return;
+            this._batchId = 0;
+            return this;
         }
 
         this._batchId--;
