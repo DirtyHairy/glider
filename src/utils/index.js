@@ -1,12 +1,10 @@
-var util = require('util');
-
-function extend(o, properties) {
-    Object.keys(properties).forEach(function(key) {
+export function extend(o, properties) {
+    Object.keys(properties).forEach((key) => {
         o[key] = properties[key];
     });
 }
 
-function clamp(x, min, max) {
+export function clamp(x, min, max) {
     if (x < min) {
         return min;
     }
@@ -18,42 +16,33 @@ function clamp(x, min, max) {
     return x;
 }
 
-function delegate(proto, target, method) {
+export function delegate(proto, target, method) {
     if (Array.isArray(method)) {
-        method.forEach(function(m) {
+        method.forEach((m) => {
             delegate(proto, target, m);
         });
     }
 
-    var functionBody = util.format('return this.%s.%s.apply(this.%s, arguments);', target, method, target);
+    const functionBody = `return this.${target}.${method}.apply(this.${target}, arguments);`;
 
     proto[method] = new Function(functionBody); // jshint ignore: line
 }
 
-function delegateFluent(proto, target, method) {
+export function delegateFluent(proto, target, method) {
     if (Array.isArray(method)) {
-        method.forEach(function(m) {
+        method.forEach((m) => {
             delegateFluent(proto, target, m);
         });
     }
-
-    var functionBody = util.format('this.%s.%s.apply(this.%s, arguments); return this;', target, method, target);
+    const functionBody = `this.${target}.${method}.apply(this.${target}, arguments); return this;`;
 
     proto[method] = new Function(functionBody); // jshint ignore: line
 }
 
-function destroy(victim) {
+export function destroy(victim) {
     if (victim && victim.destroy) {
         victim.destroy();
     }
 
     return null;
 }
-
-module.exports = {
-    extend: extend,
-    clamp: clamp,
-    delegate: delegate,
-    delegateFluent: delegateFluent,
-    destroy: destroy
-};

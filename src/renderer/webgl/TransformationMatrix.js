@@ -1,7 +1,8 @@
+import DependencyProvider from '../../utils/DependencyProvider';
+import DependencyTracker from '../../utils/DependencyTracker';
+
 var mat4 = require('gl-matrix-mat4'),
-    utils = require('../../utils'),
-    DependencyProvider = require('../../utils/DependencyProvider'),
-    DependencyTracker = require('../../utils/DependencyTracker');
+    utils = require('../../utils');
 
 function TransformationMatrix(transformation) {
     this._transformation = transformation;

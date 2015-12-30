@@ -1,6 +1,7 @@
-var utils = require('./utils'),
-    DependencyProvider = require('./utils/DependencyProvider'),
-    Observable = require('./utils/Observable');
+import DependencyProvider from './utils/DependencyProvider';
+import Observable from './utils/Observable';
+
+var utils = require('./utils');
 
 function Transformation() {
     this._dependencyProvider = new DependencyProvider(this);

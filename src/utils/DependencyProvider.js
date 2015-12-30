@@ -1,9 +1,11 @@
-function DependencyProvider(target) {
-    target._dependencyGeneration = 0;
+export default class DependencyProvider {
+    constructor(target) {
+        this._target = target;
 
-    this.bump = function() {
-        target._dependencyGeneration++;
-    };
+        target._dependencyGeneration = 0;
+    }
+
+    bump() {
+        this._target._dependencyGeneration++;
+    }
 }
-
-module.exports = DependencyProvider;

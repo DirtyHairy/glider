@@ -1,5 +1,6 @@
+import DependencyProvider from '../../utils/DependencyProvider';
+
 var utils = require('../../utils'),
-    DependencyProvider = require('../../utils/DependencyProvider'),
     RGBA = require('../../RGBA');
 
 function PickingColorManager(featureSetIndex) {

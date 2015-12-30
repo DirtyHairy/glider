@@ -1,7 +1,8 @@
-var utils = require('./utils'),
-    Observable = require('./utils/Observable'),
-    DependencyProvider = require('./utils/DependencyProvider'),
-    ListenerGroup = require('./utils/ListenerGroup');
+import DependencyProvider from './utils/DependencyProvider';
+import Observable from './utils/Observable';
+import ListenerGroup from './utils/ListenerGroup';
+
+var utils = require('./utils');
 
 function FeatureSet() {
     this._features = [];

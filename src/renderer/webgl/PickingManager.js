@@ -1,9 +1,9 @@
+import DependencyTracker from '../../utils/DependencyTracker';
+
 var utils = require('../../utils'),
-    DependencyTracker = require('../../utils/DependencyTracker'),
     PickingColorManager = require('./PickingColorManager'),
     Texture = require('./glutil/Texture'),
-    FrameBufferObject = require('./glutil/FrameBufferObject'),
-    WeakMap = require('es6-weak-map');
+    FrameBufferObject = require('./glutil/FrameBufferObject');
 
 var TEXTURE_UNIT = 1;
 

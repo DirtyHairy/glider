@@ -14,9 +14,22 @@ module.exports = function(grunt) {
                 options: {
                     browserifyOptions: {
                         debug: true,
-                        standalone: 'glider'
+                        standalone: 'glider',
+                        insertGlobalVars: {
+                            WeakMap: function() {
+                                return "require('es6-weak-map')";
+                            },
+                            Promise: function() {
+                                return "require('es6-promise').Promise";
+                            }
+                        }
                     },
-                    transform: ['brfs']
+                    transform: [
+                        ['babelify', {
+                            presets: ['es2015']
+                        }],
+                        'brfs'
+                    ]
                 }
             }
         },

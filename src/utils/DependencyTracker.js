@@ -1,24 +1,19 @@
-var utils = require('.'),
-    WeakMap = require('es6-weak-map');
+export default class DependencyTracker {
+    constructor() {
+        this._map = new WeakMap();
+    }
 
-function DependencyTracker() {
-    this._map = new WeakMap();
-}
-
-utils.extend(DependencyTracker.prototype, {
-    _map: null,
-
-    isCurrent: function(target) {
+    isCurrent(target) {
         return this._map.has(target) && (this._map.get(target) === target._dependencyGeneration);
-    },
+    }
 
-    setCurrent: function(target) {
+    setCurrent(target) {
         this._map.set(target, target._dependencyGeneration);
 
         return this;
-    },
+    }
 
-    update: function(target, cb) {
+    update(target, cb) {
         if (this.isCurrent(target)) {
             return this;
         }
@@ -28,14 +23,13 @@ utils.extend(DependencyTracker.prototype, {
         this.setCurrent(target);
 
         return this;
-    },
+    }
 
-    allCurrent: function(targets) {
-        var isCurrent = true,
-            nTargets = targets.length,
-            i;
+    allCurrent(targets) {
+        const nTargets = targets.length;
+        let isCurrent = true;
 
-        for (i = 0; i < nTargets; i++) {
+        for (let i = 0; i < nTargets; i++) {
             if (!isCurrent) {
                 return false;
             }
@@ -44,24 +38,21 @@ utils.extend(DependencyTracker.prototype, {
         }
 
         return isCurrent;
-    },
+    }
 
-    updateAll: function(targets, cb) {
+    updateAll(targets, cb) {
         if (this.allCurrent(targets)) {
             return this;
         }
 
-        var nTargets = targets.length,
-            i;
+        const nTargets = targets.length;
 
         cb();
 
-        for (i = 0; i < nTargets; i++) {
+        for (let i = 0; i < nTargets; i++) {
             this.setCurrent(targets[i]);
         }
 
         return this;
     }
-});
-
-module.exports  = DependencyTracker;
+}

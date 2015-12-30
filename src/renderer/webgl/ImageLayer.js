@@ -1,8 +1,8 @@
-var Promise = require('es6-promise').Promise,
-    utils = require('../../utils'),
+import DependencyTracker from '../../utils/DependencyTracker';
+
+var utils = require('../../utils'),
     Program = require('./glutil/Program'),
-    Texture = require('./glutil/Texture'),
-    DependencyTracker = require('../../utils/DependencyTracker');
+    Texture = require('./glutil/Texture');
 
 var fs = require('fs');
 

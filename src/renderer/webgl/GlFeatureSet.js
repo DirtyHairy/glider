@@ -1,6 +1,7 @@
+import DependencyTracker from '../../utils/DependencyTracker';
+
 var utils = require('../../utils'),
-    Program = require('./glutil/Program'),
-    DependencyTracker = require('../../utils/DependencyTracker');
+    Program = require('./glutil/Program');
 
 var fs = require('fs');
 

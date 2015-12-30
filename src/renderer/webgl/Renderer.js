@@ -1,11 +1,11 @@
-var utils = require('../../utils'),
-    ImageLayer = require('./ImageLayer'),
+import DependencyTracker from '../../utils/DependencyTracker';
+import * as utils from '../../utils';
+
+var ImageLayer = require('./ImageLayer'),
     ProjectionMatrix = require('./ProjectionMatrix'),
     TransformationMatrix = require('./TransformationMatrix'),
-    DependencyTracker = require('../../utils/DependencyTracker'),
     GlFeatureSet = require('./GlFeatureSet'),
-    PickingManager = require('./PickingManager'),
-    WeakMap = require('es6-weak-map');
+    PickingManager = require('./PickingManager');
 
 function Renderer(canvas, imageUrl, transformation) {
     this._canvas = canvas;

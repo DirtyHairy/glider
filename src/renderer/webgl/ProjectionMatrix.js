@@ -1,6 +1,7 @@
+import DependencyProvider from '../../utils/DependencyProvider';
+
 var mat4 = require('gl-matrix-mat4'),
-    utils = require('../../utils'),
-    DependencyProvider = require('../../utils/DependencyProvider');
+    utils = require('../../utils');
 
 function ProjectionMatrix(width, height) {
     this._width = width;

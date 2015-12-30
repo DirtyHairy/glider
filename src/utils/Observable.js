@@ -1,22 +1,15 @@
-var utils = require('.');
+export default class Observable {
+    constructor() {
+        this._listeners = [];
+    }
 
-function Observable() {
-    this._listeners = [];
-}
-
-var SCOPE;
-(function() {
-    SCOPE = this;
-})();
-
-utils.extend(Observable.prototype, {
-    addListener: function(listener) {
+    addListener(listener) {
         this._listeners.push(listener);
 
         return listener;
-    },
+    }
 
-    removeListener: function(listener) {
+    removeListener(listener) {
         var i = this._listeners.indexOf(listener);
 
         if (i >= 0) {
@@ -24,36 +17,34 @@ utils.extend(Observable.prototype, {
         }
 
         return this;
-    },
+    }
 
-    fire: function() {
-        var i,
-            len = this._listeners.length;
+    fire(...args) {
+        const len = this._listeners.length;
 
-        for (i = 0; i < len; i++) {
-            this._listeners[i].apply(SCOPE, arguments);
+        for (let i = 0; i < len; i++) {
+            let cb = this._listeners[i];
+            cb(...args);
         }
 
         return this;
     }
-});
 
-Observable.delegate = function(instance, collection) {
-    instance.addListener = function(observable, listener) {
-        if (!collection[observable]) {
-            throw new Error('no observable' + observable);
-        }
+    static delegate(instance, collection) {
+        instance.addListener = function(observable, listener) {
+            if (!collection[observable]) {
+                throw new Error('no observable' + observable);
+            }
 
-        collection[observable].addListener(listener);
-    };
+            collection[observable].addListener(listener);
+        };
 
-    instance.removeListener = function(observable, listener) {
-        if (!collection[observable]) {
-            throw new Error('no observable ' + observable);
-        }
+        instance.removeListener = function(observable, listener) {
+            if (!collection[observable]) {
+                throw new Error('no observable ' + observable);
+            }
 
-        collection[observable].removeListener(listener);
-    };
-};
-
-module.exports = Observable;
+            collection[observable].removeListener(listener);
+        };
+    }
+}

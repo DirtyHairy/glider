@@ -1,6 +1,7 @@
-var utils = require('./utils'),
-    Observable = require('./utils/Observable'),
-    DependencyProvider = require('./utils/DependencyProvider');
+import DependencyProvider from './utils/DependencyProvider';
+import Observable from './utils/Observable';
+
+var utils = require('./utils');
 
 function Quad(config) {
     if (config.hasOwnProperty('left')) {

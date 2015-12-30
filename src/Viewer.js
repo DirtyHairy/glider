@@ -1,9 +1,10 @@
+import ListenerGroup from './utils/ListenerGroup';
+
 var WebglRenderer = require('./renderer/webgl/Renderer'),
     Transformation = require('./Transformation'),
     Controller = require('./Controller'),
     Controls = require('./Controls'),
     RenderControl = require('./RenderControl'),
-    ListenerGroup = require('./utils/ListenerGroup'),
     utils = require('./utils');
 
 function Viewer(canvas, imageUrl) {

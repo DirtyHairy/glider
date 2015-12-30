@@ -1,15 +1,10 @@
-var WeakMap = require('es6-weak-map'),
-    utils = require('.');
+export default class ListenerGroup {
+    constructor() {
+        this._map = new WeakMap();
+    }
 
-function ListenerGroup() {
-    this._map = new WeakMap();
-}
-
-utils.extend(ListenerGroup.prototype, {
-    _map: null,
-
-    add: function(target, event, listener) {
-        var group;
+    add(target, event, listener) {
+        let group;
 
         if (!this._map.has(target)) {
             group = {};
@@ -22,14 +17,14 @@ utils.extend(ListenerGroup.prototype, {
         group[event] = target.addListener(event, listener);
 
         return this;
-    },
+    }
 
-    remove: function(target, event) {
+    remove(target, event) {
         if (!this._map.has(target)) {
             return this;
         }
 
-        var group = this._map.get(target);
+        const group = this._map.get(target);
 
         if (group[event]) {
             target.removeListener(event, group[event]);
@@ -41,16 +36,16 @@ utils.extend(ListenerGroup.prototype, {
         }
 
         return this;
-    },
+    }
 
-    removeTarget: function(target) {
+    removeTarget(target) {
         if (!this._map.has(target)) {
             return this;
         }
 
-        var group = this._map.get(target);
+        const group = this._map.get(target);
 
-        Object.keys(group).forEach(function(event) {
+        Object.keys(group).forEach((event) => {
             target.removeListener(event, group[event]);
         });
 
@@ -58,6 +53,4 @@ utils.extend(ListenerGroup.prototype, {
 
         return this;
     }
-});
-
-module.exports = ListenerGroup;
+}
