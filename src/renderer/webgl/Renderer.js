@@ -4,11 +4,16 @@ var utils = require('../../utils'),
     TransformationMatrix = require('./TransformationMatrix'),
     DependencyTracker = require('../../utils/DependencyTracker'),
     GlFeatureSet = require('./GlFeatureSet'),
+    PickingManager = require('./PickingManager'),
     WeakMap = require('es6-weak-map');
 
 function Renderer(canvas, imageUrl, transformation) {
     this._canvas = canvas;
-    this._gl = canvas.getContext('webgl');
+
+    var gl = this._gl = canvas.getContext('webgl');
+    gl.disable(gl.DEPTH_TEST);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
     this._transformation = transformation;
     this._animations = [];
     this._dependencyTracker = new DependencyTracker();
@@ -18,8 +23,8 @@ function Renderer(canvas, imageUrl, transformation) {
 
     this._featureSets = [];
     this._glFeatureSets = new WeakMap();
-
-    this._gl.blendFunc(this._gl.SRC_ALPHA, this._gl.ONE_MINUS_SRC_ALPHA);
+    this._pickingManager = new PickingManager(this._gl, this._transformationMatrix,
+        this._projectionMatrix, canvas.width, canvas.height, this._glFeatureSets);
 
     this._imageLayer = new ImageLayer(imageUrl, this._gl, this._projectionMatrix, this._transformationMatrix);
 }
@@ -39,6 +44,7 @@ utils.extend(Renderer.prototype, {
 
     _featureSets: null,
     _glFeatureSets: null,
+    _pickingManager: null,
 
     _destroyed: false,
 
@@ -50,6 +56,8 @@ utils.extend(Renderer.prototype, {
             return;
         }
 
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.clearColor(1, 1, 1, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
         gl.disable(gl.BLEND);
@@ -136,6 +144,8 @@ utils.extend(Renderer.prototype, {
             .setWidth(this._canvas.width)
             .setHeight(this._canvas.height);
 
+        this._pickingManager.adjustViewportSize(this._canvas.width, this._canvas.height);
+
         return this;
     },
 
@@ -170,6 +180,8 @@ utils.extend(Renderer.prototype, {
         this._glFeatureSets.set(featureSet,
             new GlFeatureSet(this._gl, featureSet, this._projectionMatrix, this._transformationMatrix));
 
+        this._pickingManager.addFeatureSet(featureSet);
+
         return this;
     },
 
@@ -180,6 +192,7 @@ utils.extend(Renderer.prototype, {
             this._featureSets.splice(i, 1);
             this._glFeatureSets.get(featureSet).destroy();
             this._glFeatureSets.delete(featureSet);
+            this._pickingManager.removeFeatureSet(featureSet);
         }
 
         return this;
@@ -193,6 +206,7 @@ utils.extend(Renderer.prototype, {
         this._imageLayer = utils.destroy(this._imageLayer);
         this._transformationMatrix = utils.destroy(this._transformationMatrix);
         this._projectionMatrix = utils.destroy(this._projectionMatrix);
+        this._pickingManager = utils.destroy(this._pickingManager);
 
         if (this._featureSets) {
             this._featureSets.forEach(function(featureSet) {
@@ -206,5 +220,8 @@ utils.extend(Renderer.prototype, {
         this._destroyed = true;
     }
 });
+
+
+utils.delegate(Renderer.prototype, '_pickingManager', 'getFeatureAt');
 
 module.exports = Renderer;

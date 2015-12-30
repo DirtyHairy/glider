@@ -31,6 +31,8 @@
                     window.addEventListener('resize', resizeCanvas);
 
                     viewer.rescale(0.3);
+
+                    window.renderer = viewer.getRenderer();
                 },
                 function(err) {
                     console.log('renderer failed to initialize', err);
@@ -41,8 +43,8 @@
             feature = new glider.Quad({
                 left: 0,
                 bottom: 0,
-                width: 100,
-                height: 100,
+                width: 200,
+                height: 200,
                 fillColor: new glider.RGBA(0., 0, 0, 0.4)
             });
 

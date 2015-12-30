@@ -116,7 +116,7 @@ utils.extend(ImageLayer.prototype, {
     },
 
     _createTexture: function(imageData) {
-        this._texture = new Texture(this._gl, imageData, TEXTURE_UNIT, {
+        this._texture = Texture.fromImageOrCanvas(this._gl, imageData, TEXTURE_UNIT, {
             magFilter: this._gl.LINEAR,
             minFilter: this._gl.LINEAR_MIPMAP_NEAREST,
             flipY: true
@@ -168,6 +168,8 @@ utils.extend(ImageLayer.prototype, {
 
     render: function() {
         var gl = this._gl;
+
+        this._texture.bind(TEXTURE_UNIT);
 
         this._program.use(function() {
             this.uniform1i('u_Sampler', TEXTURE_UNIT);

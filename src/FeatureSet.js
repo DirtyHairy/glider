@@ -22,7 +22,7 @@ utils.extend(FeatureSet.prototype, {
     _features: null,
     _dependencyProvider: null,
     _listeners: null,
-    
+
     _onFeatureChange: function(feature) {
         this._dependencyProvider.bump();
         this.observable.change.fire(feature);
@@ -61,6 +61,10 @@ utils.extend(FeatureSet.prototype, {
         this._features.forEach(cb, scope);
 
         return this;
+    },
+
+    get: function(i) {
+        return this._features[i];
     },
 
     destroy: function() {

@@ -14,7 +14,9 @@ function GlFeatureSet(gl, featureSet, projectionMatrix, transformationMatrix) {
 
     this._vertexPositionBuffer = gl.createBuffer();
     this._vertexColorBuffer = gl.createBuffer();
+    this._pickingColorBuffer = gl.createBuffer();
     this._dependencyTracker = new DependencyTracker();
+    this._pickingDependencyTracker = new DependencyTracker();
 
     this._projectionMatrix = projectionMatrix;
     this._transformationMatrix = transformationMatrix;
@@ -31,9 +33,13 @@ utils.extend(GlFeatureSet.prototype, {
 
     _vertexPositions: null,
     _vertexColors: null,
+    _pickingColors: null,
 
     _vertexPositionBuffer: null,
     _vertexColorBuffer: null,
+    _pickingColorBuffer: null,
+
+    _pickingDependencyTracker: null,
 
     _updateProjectionMatrix: function() {
         var me = this;
@@ -113,6 +119,49 @@ utils.extend(GlFeatureSet.prototype, {
         }
     },
 
+    _rebuildPickingVertices: function(pickingColorManager) {
+        var me = this,
+            gl = me._gl;
+
+        me._rebuildVertices();
+
+        me._pickingDependencyTracker.updateAll(
+            [me._featureSet, pickingColorManager],
+            function() {
+                var featureCount = me._featureSet.count(),
+                    colorBufferLength = 24 * featureCount;
+
+
+                if (!me._pickingColors || me._pickingColors.length !== colorBufferLength) {
+                    me._pickingColors = new Float32Array(colorBufferLength);
+                }
+
+                me._featureSet.forEach(function(quad, i) {
+                    me._rebuildPickingQuad(quad, i, pickingColorManager);
+                });
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, me._pickingColorBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, me._pickingColors, gl.DYNAMIC_DRAW);
+            }
+        );
+    },
+
+    _rebuildPickingQuad: function(quad, i, pickingColorManager) {
+        var colorBase = i * 24,
+            pickingColor = pickingColorManager.getColor(i),
+            j, k;
+
+        var color = [
+            pickingColor.r(), pickingColor.g(), pickingColor.b(), pickingColor.alpha()
+        ];
+
+        for (j = 0; j < 6; j++) {
+            for (k = 0; k < 4; k++) {
+                this._pickingColors[colorBase + 4*j + k] = color[k];
+            }
+        }
+    },
+
     _rebindBuffers: function() {
         var me = this,
             gl = me._gl;
@@ -123,6 +172,21 @@ utils.extend(GlFeatureSet.prototype, {
             this.vertexAttribPointer('a_VertexPosition', 2, gl.FLOAT);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, me._vertexColorBuffer);
+            this.enableVertexAttribArray('a_VertexColor');
+            this.vertexAttribPointer('a_VertexColor', 4, gl.FLOAT);
+        });
+    },
+
+    _rebindPickingBuffers: function() {
+        var me = this,
+            gl = me._gl;
+
+        me._program.use(function() {
+            gl.bindBuffer(gl.ARRAY_BUFFER, me._vertexPositionBuffer);
+            this.enableVertexAttribArray('a_VertexPosition');
+            this.vertexAttribPointer('a_VertexPosition', 2, gl.FLOAT);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, me._pickingColorBuffer);
             this.enableVertexAttribArray('a_VertexColor');
             this.vertexAttribPointer('a_VertexColor', 4, gl.FLOAT);
         });
@@ -140,6 +204,18 @@ utils.extend(GlFeatureSet.prototype, {
         gl.drawArrays(gl.TRIANGLES, 0, me._featureSet.count() * 6);
     },
 
+    renderPicking: function(pickingColorManager) {
+        var me = this,
+            gl = me._gl;
+
+        me._updateProjectionMatrix();
+        me._updateTransformationMatrix();
+        me._rebuildPickingVertices(pickingColorManager);
+
+        me._rebindPickingBuffers();
+        gl.drawArrays(gl.TRIANGLES, 0, me._featureSet.count() * 6);
+    },
+
     destroy: function() {
         var gl = this._gl;
 
@@ -153,6 +229,11 @@ utils.extend(GlFeatureSet.prototype, {
         if (this._vertexColorBuffer) {
             gl.deleteBuffer(this._vertexColorBuffer);
             this._vertexPositionBuffer = null;
+        }
+
+        if (this._pickingColorBuffer) {
+            gl.deleteBuffer(this._pickingColorBuffer);
+            this._pickingColorBuffer = null;
         }
     }
 });
