@@ -1,73 +1,64 @@
+import * as utils from './utils';
 import ListenerGroup from './utils/ListenerGroup';
+import Transformation from './Transformation';
+import RenderControl from './RenderControl';
 
-var WebglRenderer = require('./renderer/webgl/Renderer'),
-    Transformation = require('./Transformation'),
+const WebglRenderer = require('./renderer/webgl/Renderer'),
     Controller = require('./Controller'),
-    Controls = require('./Controls'),
-    RenderControl = require('./RenderControl'),
-    utils = require('./utils');
+    Controls = require('./Controls');
 
-function Viewer(canvas, imageUrl) {
-    this._canvas = canvas;
-    this._transformation = new Transformation();
-    this._renderer = new WebglRenderer(canvas, imageUrl, this._transformation);
-    this._renderControl = new RenderControl(this._renderer);
-    this._featureSets = [];
-    this._listeners = new ListenerGroup();
+export default class Viewer {
+    constructor(canvas, imageUrl) {
+        this._canvas = canvas;
+        this._transformation = new Transformation();
+        this._renderer = new WebglRenderer(canvas, imageUrl, this._transformation);
+        this._renderControl = new RenderControl(this._renderer);
+        this._featureSets = [];
+        this._listeners = new ListenerGroup();
+        this._controller = null;
+        this._controls = null;
 
-    this._readyPromise = this._init();
-}
+        this._readyPromise = this._init();
+    }
 
-utils.extend(Viewer.prototype, {
-    _transformation: null,
-    _renderer: null,
-    _renderControl: null,
-    _controller: null,
-    _controls: null,
-    _featureSets: null,
-    _readyPromise: null,
-    _listeners: null,
+    _init() {
+        return this._renderer.ready()
+            .then(() => {
+                this._controller = new Controller(this._renderControl, this._transformation);
+                this._controls = new Controls(this._canvas, this._controller);
 
-    _init: function() {
-        var me = this;
-
-        return me._renderer.ready()
-            .then(function() {
-                me._controller = new Controller(me._renderControl, me._transformation);
-                me._controls = new Controls(me._canvas, me._controller);
-
-                me._renderControl.render();
+                this._renderControl.render();
             });
-    },
+    }
 
-    _onFeatureSetChange: function() {
+    _onFeatureSetChange() {
         this._renderControl.render();
-    },
+    }
 
-    getRenderer: function() {
+    getRenderer() {
         return this._renderer;
-    },
+    }
 
-    getCanvas: function() {
+    getCanvas() {
         return this._canvas;
-    },
+    }
 
-    getControls: function() {
+    getControls() {
         return this._controls;
-    },
+    }
 
-    getController: function() {
+    getController() {
         return this._controller;
-    },
+    }
 
-    getTransformation: function() {
+    getTransformation() {
         return this._transformation;
-    },
+    }
 
-    addFeatureSet: function(featureSet) {
-        var changeListener = this._onFeatureSetChange.bind(this, featureSet);
+    addFeatureSet(featureSet) {
+        const changeListener = this._onFeatureSetChange.bind(this, featureSet);
 
-        this._featureSets.push();
+        this._featureSets.push(featureSet);
         this._renderer.addFeatureSet(featureSet);
 
         this._listeners
@@ -78,10 +69,10 @@ utils.extend(Viewer.prototype, {
         this._renderControl.render();
 
         return this;
-    },
+    }
 
-    removeFeatureSet: function(featureSet) {
-        var i = this._featureSets.indexOf(featureSet);
+    removeFeatureSet(featureSet) {
+        const i = this._featureSets.indexOf(featureSet);
 
         if (i >= 0) {
             this._featureSets.splice(i, 1);
@@ -89,36 +80,37 @@ utils.extend(Viewer.prototype, {
 
             this._renderControl.render();
         }
-    },
 
-    ready: function() {
+        return this;
+    }
+
+    ready() {
         return this._readyPromise;
-    },
+    }
 
-    applyCanvasResize: function() {
+    applyCanvasResize() {
         this._renderer.applyCanvasResize();
         this._controller.clampToScreen();
         this._renderControl.render();
-    },
+    }
 
-    destroy: function() {
-        var me = this;
+    destroy() {
+        this._renderer = utils.destroy(this._renderer);
+        this._controller = utils.destroy(this._controller);
+        this._controls = utils.destroy(this._controls);
+        this._transformation = utils.destroy(this._transformation);
 
-        me._renderer = utils.destroy(me._renderer);
-        me._controller = utils.destroy(me._controller);
-        me._controls = utils.destroy(me._controls);
-        me._transformation = utils.destroy(me._transformation);
-
-        if (me._featureSets) {
-            me._featureSets.forEach(function(featureSet) {
-                me._listeners.removeTarget(featureSet);
-                utils.destroy(featureSet.destroy);
+        if (this._featureSets) {
+            this._featureSets.forEach((featureSet) => {
+                this._listeners.removeTarget(featureSet);
+                utils.destroy(featureSet);
             });
 
-            me._featureSets = null;
+            this._featureSets = null;
         }
     }
-});
+
+}
 
 utils.delegate(Viewer.prototype, '_controller', [
     'getTranslateX', 'getTranslateY', 'getScale'
@@ -131,5 +123,3 @@ utils.delegateFluent(Viewer.prototype, '_controller', [
 utils.delegateFluent(Viewer.prototype, '_renderControl', [
     'render', 'suspendRender', 'resumeRender', 'startBatch', 'commitBatch'
 ]);
-
-module.exports = Viewer;

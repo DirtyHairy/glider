@@ -1,6 +1,6 @@
 module.exports = {
-    Viewer: require('./Viewer'),
+    Viewer: require('./Viewer').default,
     FeatureSet: require('./FeatureSet'),
-    Quad: require('./Quad'),
-    RGBA: require('./RGBA')
+    Quad: require('./Quad').default,
+    RGBA: require('./RGBA').default
 };

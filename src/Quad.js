@@ -1,110 +1,91 @@
 import DependencyProvider from './utils/DependencyProvider';
 import Observable from './utils/Observable';
 
-var utils = require('./utils');
+export default class Quad {
+    constructor(
+        /* jshint ignore: start */
+        {
+            left    = 0,
+            bottom  = 0,
+            width   = 0,
+            height  = 0,
+            fillColor = null,
+        } = {}
+        /* jshint ignore: end */
+    ) {
+        /* jshint ignore: start */
+        this._left = left;
+        this._bottom = bottom;
+        this._width = width;
+        this._height = height;
+        this._fillColor = fillColor;
+        /* jshint ignore: end */
+        this.observable = {
+            change: new Observable()
+        };
+        this._dependencyProvider = new DependencyProvider(this);
 
-function Quad(config) {
-    if (config.hasOwnProperty('left')) {
-        this._left = config.left;
+        Observable.delegate(this, this.observable);
+
     }
 
-    if (config.hasOwnProperty('bottom')) {
-        this._bottom = config.bottom;
-    }
-
-    if (config.hasOwnProperty('width')) {
-        this._width = config.width;
-    }
-
-    if (config.hasOwnProperty('height')) {
-        this._height = config.height;
-    }
-
-    if (config.hasOwnProperty('fillColor')) {
-        this._fillColor = config.fillColor;
-    }
-
-    this.observable = {
-        change: new Observable()
-    };
-
-    Observable.delegate(this, this.observable);
-
-    this._dependencyProvider = new DependencyProvider(this);
-}
-
-utils.extend(Quad.prototype, {
-    _left: 0,
-    _bottom: 0,
-    _width: 0,
-    _height: 0,
-    _fillColor: null,
-
-    _dependencyProvider: null,
-
-    _notifyChange: function() {
+    _notifyChange() {
         this._dependencyProvider.bump();
         this.observable.change.fire();
-    },
+    }
 
-    setLeft: function(left) {
+    setLeft(left) {
         this._left = left;
         this._notifyChange();
 
         return this;
-    },
+    }
 
-    getLeft: function() {
+    getLeft() {
         return this._left;
-    },
+    }
 
-
-    setBottom: function(bottom) {
+    setBottom(bottom) {
         this._bottom = bottom;
         this._notifyChange();
 
         return this;
-    },
+    }
 
-    getBottom: function() {
+    getBottom() {
         return this._bottom;
-    },
+    }
 
-
-    setWidth: function(width) {
+    setWidth(width) {
         this._width = width;
         this._notifyChange();
 
         return this;
-    },
+    }
 
-    getWidth: function() {
+    getWidth() {
         return this._width;
-    },
+    }
 
-
-    setHeight: function(height) {
+    setHeight(height) {
         this._height = height;
         this._notifyChange();
 
         return this;
-    },
+    }
 
-    getHeight: function() {
+    getHeight() {
         return this._height;
-    },
+    }
 
-
-    setFillColor: function(color) {
+    setFillColor(color) {
         this._fillColor = color;
         this._notifyChange();
 
         return this;
-    },
+    }
 
-    getFillColor: function() {
+    getFillColor() {
         return this._fillColor;
     }
-});
-
-module.exports = Quad;
+}

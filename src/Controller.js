@@ -1,5 +1,6 @@
-var utils = require('./utils'),
-    KineticTranslate = require('./KineticTranslate');
+import KineticTranslate from './KineticTranslate';
+
+var utils = require('./utils');
 
 function Controller(renderControl, transformation) {
     this._renderControl = renderControl;

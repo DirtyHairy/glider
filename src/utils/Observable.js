@@ -10,7 +10,7 @@ export default class Observable {
     }
 
     removeListener(listener) {
-        var i = this._listeners.indexOf(listener);
+        const i = this._listeners.indexOf(listener);
 
         if (i >= 0) {
             this._listener.splice(i, 1);

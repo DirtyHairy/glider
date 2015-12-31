@@ -1,19 +1,14 @@
-var utils = require('./utils');
+export default class RenderControl {
+    constructor(renderer) {
+        this._renderer = renderer;
+        this._batchId = 0;
+        this._renderPending = false;
+        this._suspendRender = 0;
+    }
 
-function RenderControl(renderer) {
-    this._renderer = renderer;
-}
-
-utils.extend(RenderControl.prototype, {
-    _renderer: null,
-
-    _batchId: 0,
-    _renderPending: false,
-    _suspendRender: 0,
-
-    render: function() {
+    render() {
         if (this._suspendRender > 0) {
-            return;
+            return this;
         }
 
         if (this._batchId > 0) {
@@ -21,21 +16,23 @@ utils.extend(RenderControl.prototype, {
         } else {
             this._renderer.render();
         }
-    },
 
-    startBatch: function() {
+        return this;
+    }
+
+    startBatch() {
         this._batchId++;
 
         return this;
-    },
+    }
 
-    suspendRender: function() {
+    suspendRender() {
         this._suspendRender++;
 
         return this;
-    },
+    }
 
-    resumeRender: function() {
+    resumeRender() {
         this._suspendRender--;
 
         if (this._suspendRender < 0) {
@@ -43,9 +40,9 @@ utils.extend(RenderControl.prototype, {
         }
 
         return this;
-    },
+    }
 
-    commitBatch: function() {
+    commitBatch() {
         if (this._batchId <= 0) {
             this._batchId = 0;
             return this;
@@ -59,11 +56,9 @@ utils.extend(RenderControl.prototype, {
         }
 
         return this;
-    },
+    }
 
-    getRenderer: function() {
+    getRenderer() {
         return this._renderer;
     }
-});
-
-module.exports = RenderControl;
+}

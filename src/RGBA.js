@@ -1,4 +1,4 @@
-function RGBA(r, g, b, a) {
+export default function RGBA(r, g, b, a) {
     this.r = function() {
         return r;
     };
@@ -18,6 +18,6 @@ function RGBA(r, g, b, a) {
     this.hasAlpha = function() {
         return true;
     };
-}
 
-module.exports = RGBA;
+    Object.freeze(this);
+}
