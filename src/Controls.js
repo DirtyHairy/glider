@@ -85,7 +85,7 @@ export default class Controls {
         const scale = this._controller.getScale();
 
         this._applyPan(e);
-        this._controller.kineticTranslate(-e.velocityX / scale, -e.velocityY / scale);
+        this._controller.kineticTranslate(e.velocityX / scale, -e.velocityY / scale);
 
         this._panning = false;
     }
@@ -102,7 +102,7 @@ export default class Controls {
     _applyPan(e) {
         const scale = this._controller.getScale();
 
-        this._controller.translateAbsolute(this._oldTranslateX + e.deltaX/scale, this._oldTranslateY + e.deltaY/scale);
+        this._controller.translateAbsolute(this._oldTranslateX + e.deltaX/scale, this._oldTranslateY - e.deltaY/scale);
     }
 
     _onPinch(e) {

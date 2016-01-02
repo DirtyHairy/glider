@@ -32,7 +32,7 @@ export default class Texture {
     }
 
     destroy() {
-        var gl = this._gl;
+        const gl = this._gl;
 
         if (this._texture) {
             gl.deleteTexture(this._texture);

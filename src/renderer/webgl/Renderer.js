@@ -1,56 +1,38 @@
 import DependencyTracker from '../../utils/DependencyTracker';
 import GlFeatureSet from './GlFeatureSet';
+import ImageLayer from './ImageLayer';
+import PickingManager from './PickingManager';
+import ProjectionMatrix from './ProjectionMatrix';
+import TransformationMatrix from './TransformationMatrix';
 import * as utils from '../../utils';
 
-var ImageLayer = require('./ImageLayer'),
-    ProjectionMatrix = require('./ProjectionMatrix'),
-    TransformationMatrix = require('./TransformationMatrix'),
-    PickingManager = require('./PickingManager');
+export default class Renderer {
+    constructor(canvas, imageUrl, transformation) {
+        const gl = this._gl = canvas.getContext('webgl');
+        this._canvas = canvas;
+        this._transformation = transformation;
+        this._animations = [];
+        this._dependencyTracker = new DependencyTracker();
 
-function Renderer(canvas, imageUrl, transformation) {
-    this._canvas = canvas;
+        this._projectionMatrix = new ProjectionMatrix(canvas.width, canvas.heigth);
+        this._transformationMatrix = new TransformationMatrix(transformation);
 
-    var gl = this._gl = canvas.getContext('webgl');
-    gl.disable(gl.DEPTH_TEST);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        this._featureSets = [];
+        this._glFeatureSets = new WeakMap();
+        this._pickingManager = new PickingManager(this._gl, this._transformationMatrix,
+            this._projectionMatrix, canvas.width, canvas.height, this._glFeatureSets);
 
-    this._transformation = transformation;
-    this._animations = [];
-    this._dependencyTracker = new DependencyTracker();
+        this._imageLayer = new ImageLayer(imageUrl, this._gl, this._projectionMatrix, this._transformationMatrix);
 
-    this._projectionMatrix = new ProjectionMatrix(canvas.width, canvas.heigth);
-    this._transformationMatrix = new TransformationMatrix(transformation);
+        this._renderPending = false;
+        this._destroyed = false;
 
-    this._featureSets = [];
-    this._glFeatureSets = new WeakMap();
-    this._pickingManager = new PickingManager(this._gl, this._transformationMatrix,
-        this._projectionMatrix, canvas.width, canvas.height, this._glFeatureSets);
+        gl.disable(gl.DEPTH_TEST);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    }
 
-    this._imageLayer = new ImageLayer(imageUrl, this._gl, this._projectionMatrix, this._transformationMatrix);
-}
-
-utils.extend(Renderer.prototype, {
-    _canvas: null,
-    _gl: null,
-    _dependencyTracker: null,
-    _imageLayer: null,
-
-    _transformation: null,
-    _projectionMatrix: null,
-    _transformationMatrix: null,
-
-    _renderPending: false,
-    _animations: null,
-
-    _featureSets: null,
-    _glFeatureSets: null,
-    _pickingManager: null,
-
-    _destroyed: false,
-
-    _immediateRender: function() {
-        var gl = this._gl,
-            i;
+    _immediateRender() {
+        const gl = this._gl;
 
         if (this._destroyed || this._isFramebufferCurrent()) {
             return;
@@ -64,19 +46,17 @@ utils.extend(Renderer.prototype, {
         this._imageLayer.render();
 
         gl.enable(gl.BLEND);
-        for (i = 0; i < this._featureSets.length; i++) {
-            this._glFeatureSets.get(this._featureSets[i]).render();
-        }
-    },
 
-    _isFramebufferCurrent: function() {
-        var isCurrent,
-            i;
+        this._featureSets.forEach((featureSet) => {
+            this._glFeatureSets.get(featureSet).render();
+        });
+    }
 
-        isCurrent = this._dependencyTracker.isCurrent(this._projectionMatrix) &&
+    _isFramebufferCurrent() {
+        let isCurrent = this._dependencyTracker.isCurrent(this._projectionMatrix) &&
             this._dependencyTracker.isCurrent(this._transformationMatrix);
 
-        for (i = 0; i < this._featureSets.length; i++) {
+        for (let i = 0; i < this._featureSets.length; i++) {
             if (!isCurrent) {
                 break;
             }
@@ -85,60 +65,56 @@ utils.extend(Renderer.prototype, {
         }
 
         return isCurrent;
-    },
+    }
 
-    _scheduleAnimations: function() {
-        var me = this;
-
-        requestAnimationFrame(function(timestamp) {
-            var i = 0,
-                len = me._animations.length,
+    _scheduleAnimations() {
+        requestAnimationFrame((timestamp) => {
+            let len = this._animations.length,
+                i = 0,
                 render = false;
 
             while (i < len) {
-                me._animations[i].progress(timestamp);
+                this._animations[i].progress(timestamp);
 
-                if (me._animations[i].finished()) {
+                if (this._animations[i].finished()) {
                     len--;
-                    me.removeAnimation(me._animations[i]);
+                    this.removeAnimation(this._animations[i]);
                 } else {
-                    render = render || me._animations[i].render();
+                    render = render || this._animations[i].render();
                     i++;
                 }
             }
 
             if (render) {
-                me._immediateRender();
+                this._immediateRender();
             }
 
-            if (len > 0 && ! me._destroyed) {
-                me._scheduleAnimations();
+            if (len > 0 && ! this._destroyed) {
+                this._scheduleAnimations();
             }
         });
-    },
+    }
 
-    render: function() {
-        var me = this;
-
-        if (!me._imageLayer.isReady() || me._renderPending || (me._animations && me._animations.length > 0)) {
+    render() {
+        if (!this._imageLayer.isReady() || this._renderPending || (this._animations && this._animations.length > 0)) {
             return this;
         }
 
-        requestAnimationFrame(function() {
-            me._renderPending = false;
-            me._immediateRender();
+        requestAnimationFrame(() => {
+            this._renderPending = false;
+            this._immediateRender();
         });
 
-        me._renderPending = true;
+        this._renderPending = true;
 
         return this;
-    },
+    }
 
-    getCanvas: function() {
+    getCanvas() {
         return this._canvas;
-    },
+    }
 
-    applyCanvasResize: function() {
+    applyCanvasResize() {
         this._gl.viewport(0, 0, this._canvas.width, this._canvas.height);
         this._projectionMatrix
             .setWidth(this._canvas.width)
@@ -147,35 +123,27 @@ utils.extend(Renderer.prototype, {
         this._pickingManager.adjustViewportSize(this._canvas.width, this._canvas.height);
 
         return this;
-    },
+    }
 
-    getImageWidth: function() {
-        return this._imageLayer.getImageWidth();
-    },
-
-    getImageHeight: function() {
-        return this._imageLayer.getImageHeight();
-    },
-
-    addAnimation: function(animation) {
+    addAnimation(animation) {
         this._animations.push(animation);
 
         this._scheduleAnimations();
 
         return this;
-    },
+    }
 
-    removeAnimation: function(animation) {
-        var i = this._animations.indexOf(animation);
+    removeAnimation(animation) {
+        const i = this._animations.indexOf(animation);
 
         if (i >= 0) {
             this._animations.splice(i, 1);
         }
 
         return this;
-    },
+    }
 
-    addFeatureSet: function(featureSet) {
+    addFeatureSet(featureSet) {
         this._featureSets.push(featureSet);
         this._glFeatureSets.set(featureSet,
             new GlFeatureSet(this._gl, featureSet, this._projectionMatrix, this._transformationMatrix));
@@ -183,10 +151,10 @@ utils.extend(Renderer.prototype, {
         this._pickingManager.addFeatureSet(featureSet);
 
         return this;
-    },
+    }
 
-    removeFeatureSet: function(featureSet) {
-        var i = this._featureSets.indexOf(featureSet);
+    removeFeatureSet(featureSet) {
+        const i = this._featureSets.indexOf(featureSet);
 
         if (i >= 0) {
             this._featureSets.splice(i, 1);
@@ -196,32 +164,30 @@ utils.extend(Renderer.prototype, {
         }
 
         return this;
-    },
+    }
 
-    ready: function() {
+    ready() {
         return this._imageLayer.ready();
-    },
+    }
 
-    destroy: function() {
+    destroy() {
         this._imageLayer = utils.destroy(this._imageLayer);
         this._transformationMatrix = utils.destroy(this._transformationMatrix);
         this._projectionMatrix = utils.destroy(this._projectionMatrix);
         this._pickingManager = utils.destroy(this._pickingManager);
 
         if (this._featureSets) {
-            this._featureSets.forEach(function(featureSet) {
+            this._featureSets.forEach((featureSet) => {
                 utils.destroy(this._glFeatureSets.get(featureSet));
                 this._glFeatureSets.delete(featureSet);
-            }, this);
+            });
 
             this._featureSets = null;
         }
 
         this._destroyed = true;
     }
-});
-
+}
 
 utils.delegate(Renderer.prototype, '_pickingManager', 'getFeatureAt');
-
-module.exports = Renderer;
+utils.delegate(Renderer.prototype, '_imageLayer', ['getImageWidth', 'getImageHeight']);

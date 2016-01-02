@@ -1,38 +1,30 @@
 import DependencyProvider from '../../utils/DependencyProvider';
 import DependencyTracker from '../../utils/DependencyTracker';
+import * as mat4 from 'gl-matrix-mat4';
+import * as utils from '../../utils';
 
-var mat4 = require('gl-matrix-mat4'),
-    utils = require('../../utils');
+export default class TransformationMatrix {
+    constructor(transformation) {
+        this._transformation = transformation;
+        this._dependencyProvider = new DependencyProvider(this);
+        this._dependencyTracker = new DependencyTracker(this);
+        this._matrix = mat4.create();
 
-function TransformationMatrix(transformation) {
-    this._transformation = transformation;
-    this._dependencyProvider = new DependencyProvider(this);
-    this._dependencyTracker = new DependencyTracker(this);
-    this._matrix = mat4.create();
+        this._handlers = [
+            this._transformation.observable.change.addListener(this._onTransformationChange.bind(this))
+        ];
+    }
 
-    this._handlers = [
-        this._transformation.observable.change.addListener(this._onTransformationChange.bind(this))
-    ];
-}
-
-utils.extend(TransformationMatrix.prototype, {
-    _transformation: null,
-    _dependencyProvider: null,
-    _dependencyTracker: null,
-    _handlers: null,
-
-    _matrix: null,
-
-    _onTransformationChange: function() {
+    _onTransformationChange() {
         this._dependencyProvider.bump();
-    },
+    }
 
-    getMatrix: function() {
+    getMatrix() {
         if (!this._dependencyTracker.isCurrent(this._transformation)) {
-            var t = this._transformation,
+            const t = this._transformation,
                 scale = t.getScale(),
                 dx = t.getTranslateX(),
-                dy = -t.getTranslateY();
+                dy = t.getTranslateY();
 
             mat4.identity(this._matrix);
 
@@ -43,17 +35,16 @@ utils.extend(TransformationMatrix.prototype, {
         }
 
         return this._matrix;
-    },
+    }
 
-    destroy: function() {
+    destroy() {
         if (this._handlers) {
-            this._handlers.forEach(function(handler) {
+            this._handlers.forEach((handler) => {
                 utils.destroy(handler);
             });
 
             this._handlers = null;
         }
     }
-});
 
-module.exports = TransformationMatrix;
+}

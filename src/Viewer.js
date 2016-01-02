@@ -4,8 +4,7 @@ import Transformation from './Transformation';
 import RenderControl from './RenderControl';
 import Controls from './Controls';
 import Controller from './Controller';
-
-const WebglRenderer = require('./renderer/webgl/Renderer');
+import WebglRenderer from './renderer/webgl/Renderer';
 
 export default class Viewer {
     constructor(canvas, imageUrl) {

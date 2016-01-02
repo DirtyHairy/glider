@@ -1,25 +1,16 @@
 import DependencyProvider from '../../utils/DependencyProvider';
+import * as mat4 from 'gl-matrix-mat4';
 
-var mat4 = require('gl-matrix-mat4'),
-    utils = require('../../utils');
+export default class ProjectionMatrix {
+    constructor(width, height) {
+        this._width = width;
+        this._height = height;
+        this._recalculationRequired = true;
+        this._dependencyProvider = new DependencyProvider(this);
+        this._matrix = mat4.create();
+    }
 
-function ProjectionMatrix(width, height) {
-    this._width = width;
-    this._height = height;
-    this._recalculationRequired = true;
-    this._dependencyProvider = new DependencyProvider(this);
-    this._matrix = mat4.create();
-}
-
-utils.extend(ProjectionMatrix.prototype, {
-    _width: 0,
-    _height: 0,
-
-    _matrix: null,
-    _recalculationRequired: true,
-    _dependencyProvider: null,
-
-    setWidth: function(width) {
+    setWidth(width) {
         if (width === this._width) {
             return this;
         }
@@ -29,9 +20,9 @@ utils.extend(ProjectionMatrix.prototype, {
         this._dependencyProvider.bump();
 
         return this;
-    },
+    }
 
-    setHeight: function(height) {
+    setHeight(height) {
         if (height === this._height) {
             return this;
         }
@@ -41,9 +32,9 @@ utils.extend(ProjectionMatrix.prototype, {
         this._dependencyProvider.bump();
 
         return this;
-    },
+    }
 
-    getMatrix: function() {
+    getMatrix() {
         if (this._recalculationRequired) {
             mat4.identity(this._matrix);
 
@@ -55,6 +46,4 @@ utils.extend(ProjectionMatrix.prototype, {
 
         return this._matrix;
     }
-});
-
-module.exports = ProjectionMatrix;
+}

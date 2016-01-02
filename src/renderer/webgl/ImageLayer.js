@@ -1,77 +1,58 @@
 import DependencyTracker from '../../utils/DependencyTracker';
 import Program from './glutil/Program';
 import Texture from './glutil/Texture';
+import * as shader from './shader';
+import * as utils from '../../utils';
 
-var utils = require('../../utils');
+const TEXTURE_UNIT = 0;
 
-var fs = require('fs');
+export default class ImageLayer {
+    constructor(url, gl, projectionMatrix, transformationMatrix) {
+        this._url = url;
+        this._gl = gl;
+        this._projectionMatrix = projectionMatrix;
+        this._transformationMatrix = transformationMatrix;
+        this._dependencyTracker = new DependencyTracker();
+        this._program = new Program(gl, shader.vsh.imagelayer, shader.fsh.imagelayer);
 
-var imageLayerVertexShaderSource =
-        fs.readFileSync(__dirname + '/shader/imagelayer.vsh', 'utf8'),
-    imageLayerFragmentShaderSource =
-        fs.readFileSync(__dirname + '/shader/imagelayer.fsh', 'utf8');
+        this._imageHeight = 0;
+        this._imageWidth = 0;
+        this._textureHeight = 0;
+        this._textureWidth = 0;
 
-var TEXTURE_UNIT = 0;
+        this._vertexBuffer = null;
+        this._textureCoordinateBuffer = null;
+        this._texture = null;
 
-function ImageLayer(url, gl, projectionMatrix, transformationMatrix) {
-    this._url = url;
-    this._gl = gl;
-    this._projectionMatrix = projectionMatrix;
-    this._transformationMatrix = transformationMatrix;
-    this._dependencyTracker = new DependencyTracker();
+        this._isReady = false;
 
-    this._program = new Program(gl, imageLayerVertexShaderSource, imageLayerFragmentShaderSource);
-    this._readyPromise = this._init();
-}
+        this._readyPromise = this._init();
+    }
 
-utils.extend(ImageLayer.prototype, {
-    _url: '',
-    _gl: null,
-    _projectionMatrix: null,
-    _transformationMatrix: null,
-    _dependencyTracker: null,
-    _program: null,
+    _init() {
+        return this._loadImageData()
+            .then((imageData) => {
+                this._createTexture(imageData);
+                this._createVertexBuffer();
+                this._createTextureCoordinateBuffer();
 
-    _imageHeight: 0,
-    _imageWidth: 0,
-    _textureWidth: 0,
-    _textureHeight: 0,
-
-    _vertexBuffer: null,
-    _textureCoordinateBuffer: null,
-    _texture: null,
-
-    _readyPromise: null,
-    _isReady: false,
-
-    _init: function() {
-        var me = this;
-
-        return me._loadImageData()
-            .then(function(imageData) {
-                me._createTexture(imageData);
-                me._createVertexBuffer();
-                me._createTextureCoordinateBuffer();
-
-                me._isReady = true;
+                this._isReady = true;
             });
-    },
+    }
 
-    _loadImageData: function() {
-        var me = this;
-
-        return loadImage(me._url)
-            .then(function(image) {
-                    var paddedWidth = Math.pow(2, Math.floor(Math.log(image.width) / Math.log(2)) + 1),
+    _loadImageData() {
+        return loadImage(this._url)
+            .then((image) => {
+                    const paddedWidth = Math.pow(2, Math.floor(Math.log(image.width) / Math.log(2)) + 1),
                         paddedHeight = Math.pow(2, Math.floor(Math.log(image.width) / Math.log(2)) + 1),
                         canvas = document.createElement('canvas'),
                         ctx = canvas.getContext('2d');
 
-                    canvas.width = me._textureWidth = paddedWidth;
-                    canvas.height = me._textureHeight = paddedHeight;
+                    canvas.width = this._textureWidth = paddedWidth;
+                    canvas.height = this._textureHeight = paddedHeight;
 
-                    me._imageWidth = image.width;
-                    me._imageHeight = image.height;
+                    this._imageWidth = image.width;
+                    this._imageHeight = image.height;
 
                     ctx.drawImage(image,
                         0, 0, image.width, image.height,
@@ -79,30 +60,28 @@ utils.extend(ImageLayer.prototype, {
 
                     return canvas;
                 });
-    },
+    }
 
-    _createVertexBuffer: function() {
-        var me = this,
-            gl = me._gl,
-            width = me._imageWidth,
-            height = me._imageHeight,
+    _createVertexBuffer() {
+        const gl = this._gl,
+            width = this._imageWidth,
+            height = this._imageHeight,
             data = [
                 -width/2, height/2,    width/2, height/2,
                 -width/2, -height/2,   width/2, -height/2
             ];
 
-        me._vertexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, me._vertexBuffer);
+        this._vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
-    },
+    }
 
-    _createTextureCoordinateBuffer: function() {
-        var me = this,
-            gl = me._gl,
-            width = me._imageWidth,
-            height = me._imageHeight,
-            textureWidth = me._textureWidth,
-            textureHeight = me._textureHeight,
+    _createTextureCoordinateBuffer() {
+        const gl = this._gl,
+            width = this._imageWidth,
+            height = this._imageHeight,
+            textureWidth = this._textureWidth,
+            textureHeight = this._textureHeight,
             scaleH = width / textureWidth,
             scaleV = height / textureHeight,
             data = [
@@ -110,68 +89,63 @@ utils.extend(ImageLayer.prototype, {
                 0, 0 ,          scaleH, 0
             ];
 
-        me._textureCoordinateBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, me._textureCoordinateBuffer);
+        this._textureCoordinateBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._textureCoordinateBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
-    },
+    }
 
-    _createTexture: function(imageData) {
+    _createTexture(imageData) {
         this._texture = Texture.fromImageOrCanvas(this._gl, imageData, TEXTURE_UNIT, {
             magFilter: this._gl.LINEAR,
             minFilter: this._gl.LINEAR_MIPMAP_NEAREST,
             flipY: true
         });
-    },
+    }
 
-    _updateProjectionMatrix: function() {
-        var me = this;
-
-        me._dependencyTracker.update(me._projectionMatrix, function() {
-            me._program.use(function(ctx) {
-                ctx.uniformMatrix4fv('u_ProjectionMatrix', me._projectionMatrix.getMatrix());
+    _updateProjectionMatrix() {
+        this._dependencyTracker.update(this._projectionMatrix, () => {
+            this._program.use((ctx) => {
+                ctx.uniformMatrix4fv('u_ProjectionMatrix', this._projectionMatrix.getMatrix());
             });
         });
-    },
+    }
 
-    _updateTransformationMatrix: function() {
-        var me = this;
-
-        me._dependencyTracker.update(me._transformationMatrix, function() {
-            me._program.use(function(ctx) {
-                ctx.uniformMatrix4fv('u_TransformationMatrix', me._transformationMatrix.getMatrix());
+    _updateTransformationMatrix() {
+        this._dependencyTracker.update(this._transformationMatrix, () => {
+            this._program.use((ctx) => {
+                ctx.uniformMatrix4fv('u_TransformationMatrix', this._transformationMatrix.getMatrix());
             });
         });
-    },
+    }
 
-    _rebindBuffers: function() {
-        var me = this,
-            gl = me._gl;
+    _rebindBuffers() {
+        const gl = this._gl;
 
-        me._program.use(function(ctx) {
-            gl.bindBuffer(gl.ARRAY_BUFFER, me._vertexBuffer);
+        this._program.use((ctx) => {
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
             ctx.enableVertexAttribArray('a_VertexPosition');
             ctx.vertexAttribPointer('a_VertexPosition', 2, gl.FLOAT);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, me._textureCoordinateBuffer);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._textureCoordinateBuffer);
             ctx.enableVertexAttribArray('a_TextureCoordinate');
             ctx.vertexAttribPointer('a_TextureCoordinate', 2, gl.FLOAT);
         });
-    },
+    }
 
-    getImageWidth: function() {
+    getImageWidth() {
         return this._imageWidth;
-    },
+    }
 
-    getImageHeight: function() {
+    getImageHeight() {
         return this._imageHeight;
-    },
+    }
 
-    render: function() {
-        var gl = this._gl;
+    render() {
+        const gl = this._gl;
 
         this._texture.bind(TEXTURE_UNIT);
 
-        this._program.use(function(ctx) {
+        this._program.use((ctx) => {
             ctx.uniform1i('u_Sampler', TEXTURE_UNIT);
         });
 
@@ -179,18 +153,18 @@ utils.extend(ImageLayer.prototype, {
         this._updateTransformationMatrix();
         this._rebindBuffers();
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    },
+    }
 
-    ready: function() {
+    ready() {
         return this._readyPromise;
-    },
+    }
 
-    isReady: function() {
+    isReady() {
         return this._isReady;
-    },
+    }
 
-    destroy: function() {
-        var gl = this._gl;
+    destroy() {
+        const gl = this._gl;
 
         this._program = utils.destroy(this._program);
         this._texture = utils.destroy(this._texture);
@@ -205,19 +179,17 @@ utils.extend(ImageLayer.prototype, {
             this._textureCoordinateBuffer = null;
         }
     }
-});
-
-module.exports = ImageLayer;
+}
 
 function loadImage(url) {
-    var image = new Image();
+    const image = new Image();
 
-    return new Promise(function(resolve, reject) {
-        image.addEventListener('load', function() {
+    return new Promise((resolve, reject) => {
+        image.addEventListener('load', () => {
             resolve(image);
         });
 
-        image.addEventListener('error', function() {
+        image.addEventListener('error', () => {
             reject(new Error('image load for ' + url + ' failed'));
         });
 

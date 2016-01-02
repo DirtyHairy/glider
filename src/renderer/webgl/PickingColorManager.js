@@ -1,25 +1,20 @@
 import DependencyProvider from '../../utils/DependencyProvider';
 import RGBA from '../../RGBA';
 
-var utils = require('../../utils');
+export default class PickingColorManager {
+    constructor(featureSetIndex) {
+        this._featureSetIndex = featureSetIndex;
+        this._dependecyProvider = new DependencyProvider(this);
+    }
 
-function PickingColorManager(featureSetIndex) {
-    this._featureSetIndex = featureSetIndex;
-    this._dependecyProvider = new DependencyProvider(this);
-}
-
-utils.extend(PickingColorManager.prototype, {
-    _featureSetIndex: 0,
-    _dependecyProvider: null,
-
-    setFeatureSetIndex: function(index) {
+    setFeatureSetIndex(index) {
         this._featureSetIndex = index;
         this._dependecyProvider.bump();
 
         return this;
-    },
+    }
 
-    getColor: function(i) {
+    getColor(i) {
         return new RGBA(
             (((this._featureSetIndex + 1) & 0xFF00) >>> 8) / 255,
             (( this._featureSetIndex + 1) & 0x00FF) / 255,
@@ -27,6 +22,4 @@ utils.extend(PickingColorManager.prototype, {
             ( i & 0x00FF) / 255
         );
     }
-});
-
-module.exports = PickingColorManager;
+}

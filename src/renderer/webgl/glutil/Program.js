@@ -68,7 +68,7 @@ export default class Program {
 }
 
 function compileShader(gl, source, type) {
-    var shader = gl.createShader(type);
+    const shader = gl.createShader(type);
 
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
@@ -81,7 +81,7 @@ function compileShader(gl, source, type) {
 }
 
 function linkProgram(gl, vertexShader, fragmentShader) {
-    var program = gl.createProgram();
+    const program = gl.createProgram();
 
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
