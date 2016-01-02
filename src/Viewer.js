@@ -2,10 +2,10 @@ import * as utils from './utils';
 import ListenerGroup from './utils/ListenerGroup';
 import Transformation from './Transformation';
 import RenderControl from './RenderControl';
+import Controls from './Controls';
+import Controller from './Controller';
 
-const WebglRenderer = require('./renderer/webgl/Renderer'),
-    Controller = require('./Controller'),
-    Controls = require('./Controls');
+const WebglRenderer = require('./renderer/webgl/Renderer');
 
 export default class Viewer {
     constructor(canvas, imageUrl) {

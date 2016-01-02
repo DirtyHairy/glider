@@ -16,11 +16,11 @@ module.exports = function(grunt) {
                         debug: true,
                         standalone: 'glider',
                         insertGlobalVars: {
-                            WeakMap: function() {
-                                return "require('es6-weak-map')";
+                            WeakMap: function(file) {
+                                return file.indexOf('node_modules') < 0 && "require('es6-weak-map')";
                             },
-                            Promise: function() {
-                                return "require('es6-promise').Promise";
+                            Promise: function(file) {
+                                return file.indexOf('node_modules') < 0 && "require('es6-promise').Promise";
                             }
                         }
                     },

@@ -1,10 +1,10 @@
 import DependencyTracker from '../../utils/DependencyTracker';
+import GlFeatureSet from './GlFeatureSet';
 import * as utils from '../../utils';
 
 var ImageLayer = require('./ImageLayer'),
     ProjectionMatrix = require('./ProjectionMatrix'),
     TransformationMatrix = require('./TransformationMatrix'),
-    GlFeatureSet = require('./GlFeatureSet'),
     PickingManager = require('./PickingManager');
 
 function Renderer(canvas, imageUrl, transformation) {

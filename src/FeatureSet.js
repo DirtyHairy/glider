@@ -1,36 +1,29 @@
 import DependencyProvider from './utils/DependencyProvider';
 import Observable from './utils/Observable';
 import ListenerGroup from './utils/ListenerGroup';
+import * as utils from './utils';
 
-var utils = require('./utils');
+export default class FeatureSet {
+    constructor() {
+        this._features = [];
+        this._listeners = new ListenerGroup();
+        this._dependencyProvider = new DependencyProvider(this);
+        this.observable = {
+            add: new Observable(),
+            remove: new Observable(),
+            change: new Observable()
+        };
 
-function FeatureSet() {
-    this._features = [];
+        Observable.delegate(this, this.observable);
+    }
 
-    this.observable = {
-        add: new Observable(),
-        remove: new Observable(),
-        change: new Observable()
-    };
-
-    Observable.delegate(this, this.observable);
-
-    this._listeners = new ListenerGroup();
-    this._dependencyProvider = new DependencyProvider(this);
-}
-
-utils.extend(FeatureSet.prototype, {
-    _features: null,
-    _dependencyProvider: null,
-    _listeners: null,
-
-    _onFeatureChange: function(feature) {
+    _onFeatureChange(feature) {
         this._dependencyProvider.bump();
         this.observable.change.fire(feature);
-    },
+    }
 
 
-    add: function(feature) {
+    add(feature) {
         this._features.push(feature);
         this._listeners.add(feature, 'change', this._onFeatureChange.bind(this, feature));
 
@@ -38,10 +31,10 @@ utils.extend(FeatureSet.prototype, {
         this.observable.add.fire(feature);
 
         return this;
-    },
+    }
 
-    remove: function(feature) {
-        var i = this._features.indexOf(feature);
+    remove(feature) {
+        const i = this._features.indexOf(feature);
 
         if (i >= 0) {
             this._features.splice(i, 1);
@@ -52,34 +45,30 @@ utils.extend(FeatureSet.prototype, {
         }
 
         return this;
-    },
+    }
 
-    count: function() {
+    count() {
         return this._features.length;
-    },
+    }
 
-    forEach: function(cb, scope) {
+    forEach(cb, scope) {
         this._features.forEach(cb, scope);
 
         return this;
-    },
+    }
 
-    get: function(i) {
+    get(i) {
         return this._features[i];
-    },
+    }
 
-    destroy: function() {
-        var me = this;
-
-        if (me._features) {
-            me._features.forEach(function(feature) {
-                me._listeners.removeTarget(feature);
+    destroy() {
+        if (this._features) {
+            this._features.forEach((feature) => {
+                this._listeners.removeTarget(feature);
                 utils.destroy(feature);
             });
 
-            me._features = null;
+            this._features = null;
         }
     }
-});
-
-module.exports = FeatureSet;
+}

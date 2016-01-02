@@ -1,60 +1,60 @@
-var Hammer = require('hammerjs'),
-    utils = require('./utils');
+import * as utils from './utils';
+import * as Hammer from 'hammerjs';
 
-function Controls(canvas, controller) {
-    this._canvas = canvas;
-    this._controller = controller;
-    this._manager = new Hammer.Manager(canvas);
+export default class Controls {
+    constructor(canvas, controller) {
+        this._canvas = canvas;
+        this._controller = controller;
+        this._manager = new Hammer.Manager(canvas);
+        this._canvasListener = null;
 
-    var pan = new Hammer.Pan({
-            event: 'pan',
-            threshold: 1
-        }),
-        pinch = new Hammer.Pinch({
-            event: 'pinch'
-        }),
-        tap = new Hammer.Tap({
-            event: 'doubletap',
-            threshold: 100,
-            posThreshold: 100,
-            interval: 200
-        });
+        this._panning = false;
+        this._pinching = false;
+        this._oldScale = false;
+        this._oldTranslateX = 0;
+        this._oldTranslateY = 0;
 
-    pan.requireFailure(tap);
-    pinch.requireFailure(tap);
+        this._setupListeners();
+    }
 
-    this._manager.add(pan);
-    this._manager.add(pinch);
-    this._manager.add(tap);
+    _setupListeners() {
+        let pan = new Hammer.Pan({
+                event: 'pan',
+                threshold: 1
+            }),
+            pinch = new Hammer.Pinch({
+                event: 'pinch'
+            }),
+            tap = new Hammer.Tap({
+                event: 'doubletap',
+                threshold: 100,
+                posThreshold: 100,
+                interval: 200
+            });
 
-    this._manager.on('pan', this._onPan.bind(this));
-    this._manager.on('panstart', this._onPanStart.bind(this));
-    this._manager.on('panend', this._onPanEnd.bind(this));
-    this._manager.on('pancancel', this._onPanCancel(this));
+        pan.requireFailure(tap);
+        pinch.requireFailure(tap);
 
-    this._manager.on('pinch', this._onPinch.bind(this));
-    this._manager.on('pinchstart', this._onPinchStart.bind(this));
-    this._manager.on('pinchend', this._onPinchEnd.bind(this));
-    this._manager.on('pinchcancel', this._onPinchCancel.bind(this));
+        this._manager.add(pan);
+        this._manager.add(pinch);
+        this._manager.add(tap);
 
-    this._manager.on('doubletap', this._onTap.bind(this));
+        this._manager.on('pan', this._onPan.bind(this));
+        this._manager.on('panstart', this._onPanStart.bind(this));
+        this._manager.on('panend', this._onPanEnd.bind(this));
+        this._manager.on('pancancel', this._onPanCancel(this));
 
-    canvas.addEventListener('wheel', this._canvasListener = this._onWheel.bind(this));
-}
+        this._manager.on('pinch', this._onPinch.bind(this));
+        this._manager.on('pinchstart', this._onPinchStart.bind(this));
+        this._manager.on('pinchend', this._onPinchEnd.bind(this));
+        this._manager.on('pinchcancel', this._onPinchCancel.bind(this));
 
-utils.extend(Controls.prototype, {
-    _controller: null,
-    _canvas: null,
-    _canvasListener: null,
-    _manager: null,
+        this._manager.on('doubletap', this._onTap.bind(this));
 
-    _panning: false,
-    _pinching: false,
-    _oldScale: false,
-    _oldTranslateX: 0,
-    _oldTranslateY: 0,
+        this._canvas.addEventListener('wheel', this._canvasListener = this._onWheel.bind(this));
+    }
 
-    _onPan: function(e) {
+    _onPan(e) {
         e.preventDefault();
 
         if (!this._panning) {
@@ -62,9 +62,9 @@ utils.extend(Controls.prototype, {
         }
 
         this._applyPan(e);
-    },
+    }
 
-    _onPanStart: function(e) {
+    _onPanStart(e) {
         e.preventDefault();
 
         this._panning = true;
@@ -73,39 +73,39 @@ utils.extend(Controls.prototype, {
 
         this._controller.stopKineticTranslate();
         this._applyPan(e);
-    },
+    }
 
-    _onPanEnd: function(e) {
+    _onPanEnd(e) {
         e.preventDefault();
 
         if (!this._panning) {
             return;
         }
 
-        var scale = this._controller.getScale();
+        const scale = this._controller.getScale();
 
         this._applyPan(e);
         this._controller.kineticTranslate(-e.velocityX / scale, -e.velocityY / scale);
 
         this._panning = false;
-    },
+    }
 
-    _onPanCancel: function() {
+    _onPanCancel() {
         if (!this._panning) {
             return;
         }
 
         this._controller.translateAbsolute(this._oldTranslateX, this._oldTranslateY);
         this._panning = false;
-    },
+    }
 
-    _applyPan: function(e) {
-        var scale = this._controller.getScale();
+    _applyPan(e) {
+        const scale = this._controller.getScale();
 
         this._controller.translateAbsolute(this._oldTranslateX + e.deltaX/scale, this._oldTranslateY + e.deltaY/scale);
-    },
+    }
 
-    _onPinch: function(e) {
+    _onPinch(e) {
         e.preventDefault();
 
         if (!this._pinching) {
@@ -113,9 +113,9 @@ utils.extend(Controls.prototype, {
         }
 
         this._applyPinch(e);
-    },
+    }
 
-    _onPinchStart: function(e) {
+    _onPinchStart(e) {
         e.preventDefault();
 
         this._pinching = true;
@@ -125,24 +125,24 @@ utils.extend(Controls.prototype, {
 
         this._controller.stopKineticTranslate();
         this._applyPinch(e);
-    },
+    }
 
-    _onPinchEnd: function(e) {
+    _onPinchEnd(e) {
         e.preventDefault();
 
         if (!this._pinching) {
             return;
         }
 
-        var scale = this._controller.getScale();
+        const scale = this._controller.getScale();
 
         this._applyPinch(e);
         this._controller.kineticTranslate(-e.velocityX / scale, -e.velocityY / scale);
 
         this._pinching = false;
-    },
+    }
 
-    _onPinchCancel: function() {
+    _onPinchCancel() {
         if (!this._pinching) {
             return;
         }
@@ -154,10 +154,10 @@ utils.extend(Controls.prototype, {
             .commitBatch();
 
         this._pinching = false;
-    },
+    }
 
-    _applyPinch: function(e) {
-        var newScale = this._oldScale * e.scale;
+    _applyPinch(e) {
+        const newScale = this._oldScale * e.scale;
 
         this._controller
             .startBatch()
@@ -169,36 +169,34 @@ utils.extend(Controls.prototype, {
         this._controller
             .rescaleAroundCenter(newScale, e.center.x/newScale, e.center.y/newScale)
             .commitBatch();
-    },
+    }
 
-    _onWheel: function(e) {
-        var oldScale = this._controller.getScale(),
+    _onWheel(e) {
+        const oldScale = this._controller.getScale(),
             newScale = oldScale - oldScale * e.deltaY / 500;
 
         this._applyRescale(newScale, e.clientX, e.clientY);
-    },
+    }
 
-
-    _onTap: function(e) {
-
+    _onTap(e) {
         if (e.tapCount != 2) {
             return;
         }
 
         this._applyRescale(this._controller.getScale() * 1.3, e.center.x, e.center.y);
-    },
+    }
 
-    _applyRescale: function(scale, clientX, clientY) {
-        var canvasRect = this._canvas.getBoundingClientRect();
+    _applyRescale(scale, clientX, clientY) {
+        const canvasRect = this._canvas.getBoundingClientRect();
 
         this._controller.rescaleAroundCenter(
             scale,
             (clientX - canvasRect.left - canvasRect.width / 2) / scale,
             (clientY - canvasRect.top - canvasRect.height / 2) / scale
         );
-    },
+    }
 
-    destroy: function() {
+    destroy() {
         this._manager = utils.destroy(this._manager);
 
         if (this._canvasListener) {
@@ -206,6 +204,4 @@ utils.extend(Controls.prototype, {
             this._canvasListener = null;
         }
     }
-});
-
-module.exports = Controls;
+}

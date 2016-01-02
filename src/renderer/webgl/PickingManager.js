@@ -1,9 +1,9 @@
 import DependencyTracker from '../../utils/DependencyTracker';
+import Texture from './glutil/Texture';
+import FrameBufferObject from './glutil/FrameBufferObject';
 
 var utils = require('../../utils'),
-    PickingColorManager = require('./PickingColorManager'),
-    Texture = require('./glutil/Texture'),
-    FrameBufferObject = require('./glutil/FrameBufferObject');
+    PickingColorManager = require('./PickingColorManager');
 
 var TEXTURE_UNIT = 1;
 

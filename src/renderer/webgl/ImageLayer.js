@@ -1,8 +1,8 @@
 import DependencyTracker from '../../utils/DependencyTracker';
+import Program from './glutil/Program';
+import Texture from './glutil/Texture';
 
-var utils = require('../../utils'),
-    Program = require('./glutil/Program'),
-    Texture = require('./glutil/Texture');
+var utils = require('../../utils');
 
 var fs = require('fs');
 
@@ -127,8 +127,8 @@ utils.extend(ImageLayer.prototype, {
         var me = this;
 
         me._dependencyTracker.update(me._projectionMatrix, function() {
-            me._program.use(function() {
-                this.uniformMatrix4fv('u_ProjectionMatrix', me._projectionMatrix.getMatrix());
+            me._program.use(function(ctx) {
+                ctx.uniformMatrix4fv('u_ProjectionMatrix', me._projectionMatrix.getMatrix());
             });
         });
     },
@@ -137,8 +137,8 @@ utils.extend(ImageLayer.prototype, {
         var me = this;
 
         me._dependencyTracker.update(me._transformationMatrix, function() {
-            me._program.use(function() {
-                this.uniformMatrix4fv('u_TransformationMatrix', me._transformationMatrix.getMatrix());
+            me._program.use(function(ctx) {
+                ctx.uniformMatrix4fv('u_TransformationMatrix', me._transformationMatrix.getMatrix());
             });
         });
     },
@@ -147,14 +147,14 @@ utils.extend(ImageLayer.prototype, {
         var me = this,
             gl = me._gl;
 
-        me._program.use(function() {
+        me._program.use(function(ctx) {
             gl.bindBuffer(gl.ARRAY_BUFFER, me._vertexBuffer);
-            this.enableVertexAttribArray('a_VertexPosition');
-            this.vertexAttribPointer('a_VertexPosition', 2, gl.FLOAT);
+            ctx.enableVertexAttribArray('a_VertexPosition');
+            ctx.vertexAttribPointer('a_VertexPosition', 2, gl.FLOAT);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, me._textureCoordinateBuffer);
-            this.enableVertexAttribArray('a_TextureCoordinate');
-            this.vertexAttribPointer('a_TextureCoordinate', 2, gl.FLOAT);
+            ctx.enableVertexAttribArray('a_TextureCoordinate');
+            ctx.vertexAttribPointer('a_TextureCoordinate', 2, gl.FLOAT);
         });
     },
 
@@ -171,8 +171,8 @@ utils.extend(ImageLayer.prototype, {
 
         this._texture.bind(TEXTURE_UNIT);
 
-        this._program.use(function() {
-            this.uniform1i('u_Sampler', TEXTURE_UNIT);
+        this._program.use(function(ctx) {
+            ctx.uniform1i('u_Sampler', TEXTURE_UNIT);
         });
 
         this._updateProjectionMatrix();

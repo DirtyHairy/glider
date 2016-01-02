@@ -1,33 +1,20 @@
-var utils = require('../../../utils');
+export default class Program {
+    constructor(gl, vertexShaderSource, fragmentShaderSource) {
+        this._gl = gl;
+        this._attributeLocations = {};
+        this._uniformLocations = {};
+        this._boundContext = new BoundContext(this);
+        this._vertexShader = compileShader(gl, vertexShaderSource, gl.VERTEX_SHADER);
+        this._fragmentShader = compileShader(gl, fragmentShaderSource, gl.FRAGMENT_SHADER);
+        this._program = linkProgram(gl, this._vertexShader, this._fragmentShader);
+    }
 
-function Program(gl, vertexShaderSource, fragmentShaderSource) {
-    this._gl = gl;
-    this._attributeLocations = {};
-    this._uniformLocations = {};
-    this._boundContext = new BoundContext(this);
-
-    this._vertexShader = compileShader(gl, vertexShaderSource, gl.VERTEX_SHADER);
-    this._fragmentShader = compileShader(gl, fragmentShaderSource, gl.FRAGMENT_SHADER);
-
-    this._program = linkProgram(gl, this._vertexShader, this._fragmentShader);
-}
-
-utils.extend(Program.prototype, {
-    _vertexShader: null,
-    _fragmentShader: null,
-    _program: null,
-    _gl: null,
-    _boundContext: null,
-
-    _attributeLocations: null,
-    _uniformLocations: null,
-
-    _getAttribLocation: function(name) {
+    _getAttribLocation(name) {
         if (this._attributeLocations.hasOwnProperty(name)) {
             return this._attributeLocations[name];
         }
 
-        var location = this._gl.getAttribLocation(this._program, name);
+        const location = this._gl.getAttribLocation(this._program, name);
 
         if (location < 0) {
             throw new Error('attribute ' + name + ' not found');
@@ -35,14 +22,14 @@ utils.extend(Program.prototype, {
 
         this._attributeLocations[name] = location;
         return location;
-    },
+    }
 
-    _getUniformLocation: function(name) {
+    _getUniformLocation(name) {
         if (this._uniformLocations.hasOwnProperty(name)) {
             return this._uniformLocations[name];
         }
 
-        var location = this._gl.getUniformLocation(this._program, name);
+        const location = this._gl.getUniformLocation(this._program, name);
 
         if (location < 0) {
             throw new Error('uniform ' + name + ' not found');
@@ -50,18 +37,18 @@ utils.extend(Program.prototype, {
 
         this._uniformLocations[name] = location;
         return location;
-    },
+    }
 
-    use: function(cb) {
+    use(cb) {
         this._gl.useProgram(this._program);
 
         if (cb) {
-            cb.apply(this._boundContext);
+            cb(this._boundContext);
         }
-    },
+    }
 
-    destroy: function() {
-        var gl = this._gl;
+    destroy() {
+        const gl = this._gl;
 
         if (this._program) {
             gl.deleteProgram(this._program);
@@ -78,9 +65,7 @@ utils.extend(Program.prototype, {
             this._fragmentShader = null;
         }
     }
-});
-
-module.exports = Program;
+}
 
 function compileShader(gl, source, type) {
     var shader = gl.createShader(type);
@@ -109,12 +94,12 @@ function linkProgram(gl, vertexShader, fragmentShader) {
     return program;
 }
 
-function BoundContext(program) {
-    this._program = program;
-}
+class BoundContext {
+    constructor(program) {
+        this._program = program;
+    }
 
-utils.extend(BoundContext.prototype, {
-    vertexAttribPointer: function(name, size, type, normalized, stride, offset) {
+    vertexAttribPointer(name, size, type, normalized, stride, offset) {
         this._program._gl.vertexAttribPointer(
                 this._program._getAttribLocation(name),
                 size,
@@ -123,39 +108,39 @@ utils.extend(BoundContext.prototype, {
                 stride || 0,
                 offset || 0
         );
-    },
 
-    enableVertexAttribArray: function(name) {
-        this._program._gl.enableVertexAttribArray(this._program._getAttribLocation(name));
+        return this;
     }
-});
 
-[2, 3, 4].forEach(function(dim) {
-    var method = 'uniformMatrix' + dim + 'fv';
+    enableVertexAttribArray(name) {
+        this._program._gl.enableVertexAttribArray(this._program._getAttribLocation(name));
+
+        return this;
+    }
+}
+
+[2, 3, 4].forEach((dim) => {
+    const method = `uniformMatrix${dim}fv`;
 
     BoundContext.prototype[method] = new Function('name', 'value', 'transpose', // jshint ignore:line
-        'this._program._gl.' + method + '(this._program._getUniformLocation(name), !!transpose, value);'
+        `this._program._gl.${method}(this._program._getUniformLocation(name), !!transpose, value);`
     );
 });
 
-[1, 2, 3, 4].forEach(function(dim) {
-    ['f', 'i'].forEach(function(type) {
-        var args = ['name'],
-            callArgs = ['this._program._getUniformLocation(name)'],
-            i = 0;
+[1, 2, 3, 4].forEach((dim) => {
+    ['f', 'i'].forEach((type) => {
+        const args = ['name'],
+            callArgs = ['this._program._getUniformLocation(name)'];
 
-        for (i = 0; i < dim; i++) {
+        for (let i = 0; i < dim; i++) {
             args.push('v' + i);
             callArgs.push('v' + i);
         }
 
-        var method = 'uniform' + dim + type,
-            body = 'this._program._gl.' + method + '(' + callArgs.join(',') + ')';
+        const method = `uniform${dim}${type}`;
 
-        args.push(body);
+        args.push(`this._program._gl.${method}( ${callArgs.join(',')} );`);
 
-        var Constructor = Function.bind.apply(Function, [this].concat(args));
-
-        BoundContext.prototype[method] = new Constructor();
+        BoundContext.prototype[method] = new Function(...args);//jshint ignore:line
     });
 });

@@ -1,224 +1,194 @@
 import DependencyTracker from '../../utils/DependencyTracker';
+import Program from './glutil/Program';
+import * as shader from './shader';
+import * as utils from '../../utils';
 
-var utils = require('../../utils'),
-    Program = require('./glutil/Program');
+export default class GlFeatureSet {
+    constructor(gl, featureSet, projectionMatrix, transformationMatrix) {
+        this._gl = gl;
+        this._featureSet = featureSet;
+        this._program = new Program(gl, shader.vsh.feature, shader.fsh.feature);
 
-var fs = require('fs');
+        this._dependencyTracker = new DependencyTracker();
+        this._pickingDependencyTracker = new DependencyTracker();
 
-var featureSetVertexShadeSource = fs.readFileSync(__dirname + '/shader/feature.vsh', 'utf8'),
-    featureSetFragmentShaderSource = fs.readFileSync(__dirname + '/shader/feature.fsh', 'utf8');
+        this._projectionMatrix = projectionMatrix;
+        this._transformationMatrix = transformationMatrix;
 
-function GlFeatureSet(gl, featureSet, projectionMatrix, transformationMatrix) {
-    this._gl = gl;
-    this._featureSet = featureSet;
-    this._program = new Program(gl, featureSetVertexShadeSource, featureSetFragmentShaderSource);
+        this._vertexPositions = null;
+        this._vertexColors = null;
+        this._pickingColors = null;
+        this._vertexPositionBuffer = gl.createBuffer();
+        this._vertexColorBuffer = gl.createBuffer();
+        this._pickingColorBuffer = gl.createBuffer();
+    }
 
-    this._vertexPositionBuffer = gl.createBuffer();
-    this._vertexColorBuffer = gl.createBuffer();
-    this._pickingColorBuffer = gl.createBuffer();
-    this._dependencyTracker = new DependencyTracker();
-    this._pickingDependencyTracker = new DependencyTracker();
-
-    this._projectionMatrix = projectionMatrix;
-    this._transformationMatrix = transformationMatrix;
-}
-
-utils.extend(GlFeatureSet.prototype, {
-    _dependencyTracker: null,
-    _featureSet: null,
-    _gl: null,
-    _program: null,
-
-    _projectionMatrix: null,
-    _transformationMatrix: null,
-
-    _vertexPositions: null,
-    _vertexColors: null,
-    _pickingColors: null,
-
-    _vertexPositionBuffer: null,
-    _vertexColorBuffer: null,
-    _pickingColorBuffer: null,
-
-    _pickingDependencyTracker: null,
-
-    _updateProjectionMatrix: function() {
-        var me = this;
-
-        me._dependencyTracker.update(me._projectionMatrix, function() {
-            me._program.use(function() {
-                this.uniformMatrix4fv('u_ProjectionMatrix', me._projectionMatrix.getMatrix());
+    _updateProjectionMatrix() {
+        this._dependencyTracker.update(this._projectionMatrix, () => {
+            this._program.use((ctx) => {
+                ctx.uniformMatrix4fv('u_ProjectionMatrix', this._projectionMatrix.getMatrix());
             });
         });
-    },
+    }
 
-    _updateTransformationMatrix: function() {
-        var me = this;
-
-        me._dependencyTracker.update(me._transformationMatrix, function() {
-            me._program.use(function() {
-                this.uniformMatrix4fv('u_TransformationMatrix', me._transformationMatrix.getMatrix());
+    _updateTransformationMatrix() {
+        this._dependencyTracker.update(this._transformationMatrix, () => {
+            this._program.use((ctx) => {
+                ctx.uniformMatrix4fv('u_TransformationMatrix', this._transformationMatrix.getMatrix());
             });
         });
-    },
+    }
 
-    _rebuildVertices: function() {
-        var me = this,
-            gl = me._gl;
+    _rebuildVertices() {
+        const gl = this._gl;
 
-        me._dependencyTracker.update(me._featureSet, function() {
-            var featureCount = me._featureSet.count(),
+        this._dependencyTracker.update(this._featureSet, () => {
+            const featureCount = this._featureSet.count(),
                 positionBufferLength = 12 * featureCount,
                 colorBufferLength = 24 * featureCount;
 
-            if (!me._vertexPositions || me._vertexPositions.length !== positionBufferLength) {
-                me._vertexPositions = new Float32Array(positionBufferLength);
+            if (!this._vertexPositions || this._vertexPositions.length !== positionBufferLength) {
+                this._vertexPositions = new Float32Array(positionBufferLength);
             }
 
-            if (!me._vertexColors || me._vertexColors.length !== colorBufferLength) {
-                me._vertexColors = new Float32Array(colorBufferLength);
+            if (!this._vertexColors || this._vertexColors.length !== colorBufferLength) {
+                this._vertexColors = new Float32Array(colorBufferLength);
             }
 
-            me._featureSet.forEach(me._rebuildQuad, me);
+            this._featureSet.forEach(this._rebuildQuad, this);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, me._vertexPositionBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, me._vertexPositions, gl.DYNAMIC_DRAW);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexPositionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, this._vertexPositions, gl.DYNAMIC_DRAW);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, me._vertexColorBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, me._vertexColors, gl.DYNAMIC_DRAW);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexColorBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, this._vertexColors, gl.DYNAMIC_DRAW);
         });
-    },
+    }
 
-    _rebuildQuad: function(quad, i) {
-        var me = this,
-            vertexBase = i * 12,
+    _rebuildQuad(quad, i) {
+        const vertexBase = i * 12,
             colorBase = i * 24,
             bottom = quad.getBottom(),
             left = quad.getLeft(),
             top = bottom + quad.getHeight(),
             right = left + quad.getWidth(),
-            fillColor = quad.getFillColor(),
-            j, k;
+            fillColor = quad.getFillColor();
 
-        var vertices = [
+        const vertices = [
             left, bottom,       left, top,      right, top,
             right, top,         right, bottom,    left, bottom
         ];
 
-        for (j = 0; j < 12; j++) {
-            me._vertexPositions[j + vertexBase] = vertices[j];
+        for (let j = 0; j < 12; j++) {
+            this._vertexPositions[j + vertexBase] = vertices[j];
         }
 
-        var color = [
+        const color = [
             fillColor.r(), fillColor.g(), fillColor.b(), fillColor.alpha()
         ];
 
-        for (j = 0; j < 6; j++) {
-            for (k = 0; k < 4; k++) {
-                me._vertexColors[colorBase + 4*j + k] = color[k];
+        for (let j = 0; j < 6; j++) {
+            for (let k = 0; k < 4; k++) {
+                this._vertexColors[colorBase + 4*j + k] = color[k];
             }
         }
-    },
+    }
 
-    _rebuildPickingVertices: function(pickingColorManager) {
-        var me = this,
-            gl = me._gl;
+    _rebuildPickingVertices(pickingColorManager) {
+        const gl = this._gl;
 
-        me._rebuildVertices();
+        this._rebuildVertices();
 
-        me._pickingDependencyTracker.updateAll(
-            [me._featureSet, pickingColorManager],
-            function() {
-                var featureCount = me._featureSet.count(),
+        this._pickingDependencyTracker.updateAll(
+            [this._featureSet, pickingColorManager],
+            () => {
+                const featureCount = this._featureSet.count(),
                     colorBufferLength = 24 * featureCount;
 
 
-                if (!me._pickingColors || me._pickingColors.length !== colorBufferLength) {
-                    me._pickingColors = new Float32Array(colorBufferLength);
+                if (!this._pickingColors || this._pickingColors.length !== colorBufferLength) {
+                    this._pickingColors = new Float32Array(colorBufferLength);
                 }
 
-                me._featureSet.forEach(function(quad, i) {
-                    me._rebuildPickingQuad(quad, i, pickingColorManager);
+                this._featureSet.forEach((quad, i) => {
+                    this._rebuildPickingQuad(quad, i, pickingColorManager);
                 });
 
-                gl.bindBuffer(gl.ARRAY_BUFFER, me._pickingColorBuffer);
-                gl.bufferData(gl.ARRAY_BUFFER, me._pickingColors, gl.DYNAMIC_DRAW);
+                gl.bindBuffer(gl.ARRAY_BUFFER, this._pickingColorBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, this._pickingColors, gl.DYNAMIC_DRAW);
             }
         );
-    },
+    }
 
-    _rebuildPickingQuad: function(quad, i, pickingColorManager) {
-        var colorBase = i * 24,
-            pickingColor = pickingColorManager.getColor(i),
-            j, k;
+    _rebuildPickingQuad(quad, i, pickingColorManager) {
+        const colorBase = i * 24,
+            pickingColor = pickingColorManager.getColor(i);
 
-        var color = [
+        const color = [
             pickingColor.r(), pickingColor.g(), pickingColor.b(), pickingColor.alpha()
         ];
 
-        for (j = 0; j < 6; j++) {
-            for (k = 0; k < 4; k++) {
+        for (let j = 0; j < 6; j++) {
+            for (let k = 0; k < 4; k++) {
                 this._pickingColors[colorBase + 4*j + k] = color[k];
             }
         }
-    },
+    }
 
-    _rebindBuffers: function() {
-        var me = this,
-            gl = me._gl;
+    _rebindBuffers() {
+        const gl = this._gl;
 
-        me._program.use(function() {
-            gl.bindBuffer(gl.ARRAY_BUFFER, me._vertexPositionBuffer);
-            this.enableVertexAttribArray('a_VertexPosition');
-            this.vertexAttribPointer('a_VertexPosition', 2, gl.FLOAT);
+        this._program.use((ctx) => {
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexPositionBuffer);
+            ctx.enableVertexAttribArray('a_VertexPosition');
+            ctx.vertexAttribPointer('a_VertexPosition', 2, gl.FLOAT);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, me._vertexColorBuffer);
-            this.enableVertexAttribArray('a_VertexColor');
-            this.vertexAttribPointer('a_VertexColor', 4, gl.FLOAT);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexColorBuffer);
+            ctx.enableVertexAttribArray('a_VertexColor');
+            ctx.vertexAttribPointer('a_VertexColor', 4, gl.FLOAT);
         });
-    },
+    }
 
-    _rebindPickingBuffers: function() {
-        var me = this,
-            gl = me._gl;
+    _rebindPickingBuffers() {
+        const gl = this._gl;
 
-        me._program.use(function() {
-            gl.bindBuffer(gl.ARRAY_BUFFER, me._vertexPositionBuffer);
-            this.enableVertexAttribArray('a_VertexPosition');
-            this.vertexAttribPointer('a_VertexPosition', 2, gl.FLOAT);
+        this._program.use((ctx) => {
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexPositionBuffer);
+            ctx.enableVertexAttribArray('a_VertexPosition');
+            ctx.vertexAttribPointer('a_VertexPosition', 2, gl.FLOAT);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, me._pickingColorBuffer);
-            this.enableVertexAttribArray('a_VertexColor');
-            this.vertexAttribPointer('a_VertexColor', 4, gl.FLOAT);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._pickingColorBuffer);
+            ctx.enableVertexAttribArray('a_VertexColor');
+            ctx.vertexAttribPointer('a_VertexColor', 4, gl.FLOAT);
         });
-    },
+    }
 
-    render: function() {
-        var me = this,
-            gl = me._gl;
+    render() {
+        const gl = this._gl;
 
-        me._updateProjectionMatrix();
-        me._updateTransformationMatrix();
-        me._rebuildVertices();
+        this._updateProjectionMatrix();
+        this._updateTransformationMatrix();
+        this._rebuildVertices();
 
-        me._rebindBuffers();
-        gl.drawArrays(gl.TRIANGLES, 0, me._featureSet.count() * 6);
-    },
+        this._rebindBuffers();
+        gl.drawArrays(gl.TRIANGLES, 0, this._featureSet.count() * 6);
 
-    renderPicking: function(pickingColorManager) {
-        var me = this,
-            gl = me._gl;
+        return this;
+    }
 
-        me._updateProjectionMatrix();
-        me._updateTransformationMatrix();
-        me._rebuildPickingVertices(pickingColorManager);
+    renderPicking(pickingColorManager) {
+        const gl = this._gl;
 
-        me._rebindPickingBuffers();
-        gl.drawArrays(gl.TRIANGLES, 0, me._featureSet.count() * 6);
-    },
+        this._updateProjectionMatrix();
+        this._updateTransformationMatrix();
+        this._rebuildPickingVertices(pickingColorManager);
 
-    destroy: function() {
-        var gl = this._gl;
+        this._rebindPickingBuffers();
+        gl.drawArrays(gl.TRIANGLES, 0, this._featureSet.count() * 6);
+    }
+
+    destroy() {
+        const gl = this._gl;
 
         this._program = utils.destroy(this._program);
 
@@ -237,6 +207,4 @@ utils.extend(GlFeatureSet.prototype, {
             this._pickingColorBuffer = null;
         }
     }
-});
-
-module.exports = GlFeatureSet;
+}

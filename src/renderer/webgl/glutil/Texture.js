@@ -1,70 +1,18 @@
-var utils = require('../../../utils');
+export default class Texture {
+    constructor(gl) {
+        const texture = gl.createTexture();
 
-function Texture(gl) {
-    var texture = gl.createTexture();
-
-    this._gl = gl;
-    this._texture = texture;
-    this._format = gl.RGB;
-    this._texelFormat = gl.UNSIGNED_BYTE;
-    this._boundContext = new BoundContext(this);
-
-    this._getTextureUnits();
-}
-
-utils.extend(Texture, {
-    fromImageOrCanvas: function(gl, imageData, textureUnit, options) {
-        var texture = new Texture(gl);
-
-        texture.bind(textureUnit, function(ctx) {
-            ctx
-                .reconfigure(options)
-                .loadImageOrCanvas(imageData);
-        });
-
-        return texture;
-    },
-
-    fromPixelData: function(gl, width, heigth, pixelData, textureUnit, options) {
-        var texture = new Texture(gl);
-
-        texture.bind(textureUnit, function(ctx) {
-            ctx
-                .reconfigure(options)
-                .loadPixelData(width, heigth, pixelData);
-        });
-
-        return texture;
+        this._gl = gl;
+        this._texture = texture;
+        this._format = gl.RGB;
+        this._texelFormat = gl.UNSIGNED_BYTE;
+        this._textureUnits = getTextureUnits(gl);
+        this._mipmap = false;
+        this._boundContext = new BoundContext(this);
     }
-});
 
-utils.extend(Texture.prototype, {
-    _gl: null,
-    _texture: null,
-    _mipmap: false,
-    _boundContext: null,
-    _textureUnits: null,
-
-    _getTextureUnits: function() {
-        var gl = this._gl,
-            i = 0,
-            name;
-
-        this._textureUnits = [];
-
-        while (true) {
-            name = 'TEXTURE' + (i++);
-
-            if (!(name in gl)) {
-                break;
-            }
-
-            this._textureUnits.push(gl[name]);
-        }
-    },
-
-    bind: function(textureUnit, cb) {
-        var gl = this._gl;
+    bind(textureUnit, cb) {
+        const gl = this._gl;
 
         if (typeof(textureUnit) !== 'undefined') {
             gl.activeTexture(this._textureUnits[textureUnit]);
@@ -77,13 +25,13 @@ utils.extend(Texture.prototype, {
         }
 
         return this;
-    },
+    }
 
-    getTextureObject: function() {
+    getTextureObject() {
         return this._texture;
-    },
+    }
 
-    destroy: function() {
+    destroy() {
         var gl = this._gl;
 
         if (this._texture) {
@@ -91,19 +39,56 @@ utils.extend(Texture.prototype, {
             this._texture = null;
         }
     }
-});
 
-module.exports = Texture;
+    static fromImageOrCanvas(gl, imageData, textureUnit, options) {
+        const texture = new Texture(gl);
 
-function BoundContext(texture) {
-    this._texture = texture;
+        texture.bind(textureUnit, (ctx) => {
+            ctx
+                .reconfigure(options)
+                .loadImageOrCanvas(imageData);
+        });
+
+        return texture;
+    }
+
+    static fromPixelData(gl, width, heigth, pixelData, textureUnit, options) {
+        const texture = new Texture(gl);
+
+        texture.bind(textureUnit, (ctx) => {
+            ctx
+                .reconfigure(options)
+                .loadPixelData(width, heigth, pixelData);
+        });
+
+        return texture;
+    }
 }
 
-utils.extend(BoundContext.prototype, {
-    reconfigure: function(options) {
-        var gl = this._texture._gl;
+function getTextureUnits(gl) {
+    const textureUnits = [];
+    let i = 0;
 
-        options = options || {};
+    while (true) {
+        let name = 'TEXTURE' + (i++);
+
+        if (!(name in gl)) {
+            break;
+        }
+
+        textureUnits.push(gl[name]);
+    }
+
+    return textureUnits;
+}
+
+class BoundContext {
+    constructor(texture) {
+        this._texture = texture;
+    }
+
+    reconfigure(options = {}) {
+        const gl = this._texture._gl;
 
         if (options.hasOwnProperty('magFilter')) {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, options.magFilter);
@@ -135,10 +120,10 @@ utils.extend(BoundContext.prototype, {
         }
 
         return this;
-    },
+    }
 
-    loadImageOrCanvas: function(imageData) {
-        var gl = this._texture._gl;
+    loadImageOrCanvas(imageData) {
+        const gl = this._texture._gl;
 
         gl.texImage2D(gl.TEXTURE_2D, 0, this._texture._format, this._texture._format,
             this._texture._texelFormat, imageData);
@@ -148,10 +133,10 @@ utils.extend(BoundContext.prototype, {
         }
 
         return this;
-    },
+    }
 
-    loadPixelData: function(width, height, pixelData) {
-        var gl = this._texture._gl;
+    loadPixelData(width, height, pixelData) {
+        const gl = this._texture._gl;
 
         gl.texImage2D(gl.TEXTURE_2D, 0, this._texture._format, width, height,
             0, this._texture._format, this._texture._texelFormat, pixelData);
@@ -162,4 +147,4 @@ utils.extend(BoundContext.prototype, {
 
         return this;
     }
-});
+}
