@@ -14,19 +14,12 @@ module.exports = function(grunt) {
                 options: {
                     browserifyOptions: {
                         debug: true,
-                        standalone: 'glider',
-                        insertGlobalVars: {
-                            WeakMap: function(file) {
-                                return file.indexOf('node_modules') < 0 && "require('es6-weak-map')";
-                            },
-                            Promise: function(file) {
-                                return file.indexOf('node_modules') < 0 && "require('es6-promise').Promise";
-                            }
-                        }
+                        standalone: 'glider'
                     },
                     transform: [
                         ['babelify', {
-                            presets: ['es2015']
+                            presets: ['es2015'],
+                            plugins: ['transform-runtime']
                         }],
                         'brfs'
                     ]
