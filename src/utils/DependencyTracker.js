@@ -1,14 +1,16 @@
+import {generationSymbol} from './DependencyProvider';
+
 export default class DependencyTracker {
     constructor() {
         this._map = new WeakMap();
     }
 
     isCurrent(target) {
-        return this._map.has(target) && (this._map.get(target) === target._dependencyGeneration);
+        return this._map.has(target) && (this._map.get(target) === target[generationSymbol]);
     }
 
     setCurrent(target) {
-        this._map.set(target, target._dependencyGeneration);
+        this._map.set(target, target[generationSymbol]);
 
         return this;
     }

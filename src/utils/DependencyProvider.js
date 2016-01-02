@@ -1,11 +1,13 @@
+export const generationSymbol = Symbol('generation counter');
+
 export default class DependencyProvider {
     constructor(target) {
         this._target = target;
 
-        target._dependencyGeneration = 0;
+        target[generationSymbol] = 0;
     }
 
     bump() {
-        this._target._dependencyGeneration++;
+        this._target[generationSymbol]++;
     }
 }
