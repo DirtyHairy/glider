@@ -133,8 +133,8 @@ export default class PickingManager {
 
         const featureSetIdx =     (pixelData[0] << 8) | pixelData[1],
             featureIdx =        (pixelData[2] << 8) | pixelData[3],
-            featureSet = (featureSetIdx > 0 && featureSetIdx <= this._featureSets.length) ?
-                this._featureSets[featureSetIdx - 1] : null,
+            featureSet = (featureSetIdx > 0 && featureSetIdx <= this._featureSets.count()) ?
+                this._featureSets.get([featureSetIdx - 1]) : null,
             feature = (featureSet && featureIdx < featureSet.count()) ? featureSet.get(featureIdx) : null;
 
         return feature;
