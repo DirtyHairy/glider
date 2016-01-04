@@ -5,15 +5,16 @@ import RenderControl from './RenderControl';
 import Controls from './Controls';
 import Controller from './Controller';
 import WebglRenderer from './renderer/webgl/Renderer';
+import Collection from './utils/TrackingCollection';
 
 export default class Viewer {
     constructor(canvas, imageUrl) {
         this._canvas = canvas;
         this._transformation = new Transformation();
-        this._renderer = new WebglRenderer(canvas, imageUrl, this._transformation);
-        this._renderControl = new RenderControl(this._renderer);
-        this._featureSets = [];
+        this._featureSets = new Collection();
         this._listeners = new ListenerGroup();
+        this._renderer = new WebglRenderer(canvas, imageUrl, this._transformation, this._featureSets);
+        this._renderControl = new RenderControl(this._renderer);
         this._controller = null;
         this._controls = null;
 
@@ -57,8 +58,7 @@ export default class Viewer {
     addFeatureSet(featureSet) {
         const changeListener = this._onFeatureSetChange.bind(this, featureSet);
 
-        this._featureSets.push(featureSet);
-        this._renderer.addFeatureSet(featureSet);
+        this._featureSets.add(featureSet);
 
         this._listeners
             .add(featureSet, 'add', changeListener)
@@ -71,12 +71,8 @@ export default class Viewer {
     }
 
     removeFeatureSet(featureSet) {
-        const i = this._featureSets.indexOf(featureSet);
-
-        if (i >= 0) {
-            this._featureSets.splice(i, 1);
+        if (this._featureSets.remove(featureSet)) {
             this._listeners.removeTarget(featureSet);
-
             this._renderControl.render();
         }
 
@@ -105,7 +101,7 @@ export default class Viewer {
                 utils.destroy(featureSet);
             });
 
-            this._featureSets = null;
+            this._featureSets = utils.destroy(this._featureSets);
         }
     }
 

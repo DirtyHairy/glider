@@ -3,23 +3,26 @@ import Texture from './glutil/Texture';
 import FrameBufferObject from './glutil/FrameBufferObject';
 import PickingColorManager from './PickingColorManager';
 import * as utils from '../../utils';
+import ListenerGroup from '../../utils/ListenerGroup';
 
 const TEXTURE_UNIT = 1;
 
 export default class PickingManager {
-    constructor(gl, transformationMatrix, projectionMatrix, width, height, glFeatureSets) {
+    constructor(gl, featureSets, glFeatureSets, transformationMatrix, projectionMatrix, width, height) {
         this._gl = gl;
         this._dependencyTracker = new DependencyTracker();
         this._transformationMatrix = transformationMatrix;
         this._projectionMatrix = projectionMatrix;
-        this._featureSets = [];
+        this._featureSets = featureSets;
         this._glFeatureSets = glFeatureSets;
+        this._listeners = new ListenerGroup();
         this._colorManagers = new WeakMap();
         this._width = width;
         this._height = height;
         this._forceRedraw = true;
 
         this._setupFramebuffer();
+        this._registerFeatureSets();
     }
 
     _setupFramebuffer() {
@@ -42,6 +45,29 @@ export default class PickingManager {
 
         this._texture = texture;
         this._fbo = fbo;
+    }
+
+    _onFeatureSetAdded(featureSet) {
+        this._colorManagers.set(featureSet, new PickingColorManager(0));
+        this._assignFeatureSetIndices();
+
+        this._forceRedraw = true;
+
+        return this;
+    }
+
+    _onFeatureSetRemoved(featureSet) {
+        this._colorManagers.delete(featureSet);
+        this._assignFeatureSetIndices();
+
+        this._forceRedraw = true;
+    }
+
+    _registerFeatureSets() {
+        this._listeners.add(this._featureSets, 'add', this._onFeatureSetAdded.bind(this));
+        this._listeners.add(this._featureSets, 'remove', this._onFeatureSetRemoved.bind(this));
+
+        this._featureSets.forEach(this._onFeatureSetAdded.bind(this));
     }
 
     _assignFeatureSetIndices() {
@@ -90,30 +116,6 @@ export default class PickingManager {
         return this;
     }
 
-    addFeatureSet(featureSet) {
-        this._featureSets.push(featureSet);
-        this._colorManagers.set(featureSet, new PickingColorManager(0));
-        this._assignFeatureSetIndices();
-
-        this._forceRedraw = true;
-
-        return this;
-    }
-
-    removeFeatureSet(featureSet) {
-        const i = this._featureSets.indexOf(featureSet);
-
-        if (i >= 0) {
-            this._featureSets.splice(i, 1);
-            this._colorManagers.delete(featureSet);
-            this._assignFeatureSetIndices();
-
-            this._forceRedraw = true;
-        }
-
-        return this;
-    }
-
     getFeatureAt(x, y) {
         const gl = this._gl;
 
@@ -146,6 +148,8 @@ export default class PickingManager {
             this._featureSets.forEach((featureSet) => {
                 this._colorManagers.delete(featureSet);
             });
+
+            this._listeners.removeTarget(this._featureSets);
 
             this._featureSets = null;
         }

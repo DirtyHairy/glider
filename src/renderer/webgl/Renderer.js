@@ -5,27 +5,32 @@ import PickingManager from './PickingManager';
 import ProjectionMatrix from './ProjectionMatrix';
 import TransformationMatrix from './TransformationMatrix';
 import * as utils from '../../utils';
+import ListenerGroup from '../../utils/ListenerGroup';
 
 export default class Renderer {
-    constructor(canvas, imageUrl, transformation) {
-        const gl = this._gl = canvas.getContext('webgl');
+    constructor(canvas, imageUrl, transformation, featureSets) {
+        const gl = canvas.getContext('webgl');
+
+        this._gl = gl;
         this._canvas = canvas;
         this._transformation = transformation;
         this._animations = [];
         this._dependencyTracker = new DependencyTracker();
-
+        this._listeners = new ListenerGroup();
         this._projectionMatrix = new ProjectionMatrix(canvas.width, canvas.heigth);
         this._transformationMatrix = new TransformationMatrix(transformation);
-
-        this._featureSets = [];
+        this._featureSets = featureSets;
         this._glFeatureSets = new WeakMap();
-        this._pickingManager = new PickingManager(this._gl, this._transformationMatrix,
-            this._projectionMatrix, canvas.width, canvas.height, this._glFeatureSets);
-
+        this._pickingManager = new PickingManager(
+            this._gl, this._featureSets, this._glFeatureSets,
+            this._transformationMatrix, this._projectionMatrix,
+            canvas.width, canvas.height
+        );
         this._imageLayer = new ImageLayer(imageUrl, this._gl, this._projectionMatrix, this._transformationMatrix);
-
         this._renderPending = false;
         this._destroyed = false;
+
+        this._registerFeatureSets();
 
         gl.disable(gl.DEPTH_TEST);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -95,6 +100,23 @@ export default class Renderer {
         });
     }
 
+    _onFeatureSetAdded(featureSet) {
+        this._glFeatureSets.set(featureSet,
+            new GlFeatureSet(this._gl, featureSet, this._projectionMatrix, this._transformationMatrix));
+    }
+
+    _onFeatureSetRemoved(featureSet) {
+        this._glFeatureSets.get(featureSet).destroy();
+        this._glFeatureSets.delete(featureSet);
+    }
+
+    _registerFeatureSets() {
+        this._listeners.add(this._featureSets, 'add', this._onFeatureSetAdded.bind(this));
+        this._listeners.add(this._featureSets, 'remove', this._onFeatureSetRemoved.bind(this));
+
+        this._featureSets.forEach(this._onFeatureSetAdded.bind(this));
+    }
+
     render() {
         if (!this._imageLayer.isReady() || this._renderPending || (this._animations && this._animations.length > 0)) {
             return this;
@@ -143,29 +165,6 @@ export default class Renderer {
         return this;
     }
 
-    addFeatureSet(featureSet) {
-        this._featureSets.push(featureSet);
-        this._glFeatureSets.set(featureSet,
-            new GlFeatureSet(this._gl, featureSet, this._projectionMatrix, this._transformationMatrix));
-
-        this._pickingManager.addFeatureSet(featureSet);
-
-        return this;
-    }
-
-    removeFeatureSet(featureSet) {
-        const i = this._featureSets.indexOf(featureSet);
-
-        if (i >= 0) {
-            this._featureSets.splice(i, 1);
-            this._glFeatureSets.get(featureSet).destroy();
-            this._glFeatureSets.delete(featureSet);
-            this._pickingManager.removeFeatureSet(featureSet);
-        }
-
-        return this;
-    }
-
     ready() {
         return this._imageLayer.ready();
     }
@@ -181,6 +180,7 @@ export default class Renderer {
                 utils.destroy(this._glFeatureSets.get(featureSet));
                 this._glFeatureSets.delete(featureSet);
             });
+            this._listeners.removeTarget(this._glFeatureSets);
 
             this._featureSets = null;
         }
