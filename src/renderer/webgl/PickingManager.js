@@ -107,9 +107,7 @@ export default class PickingManager {
         this._width = width;
         this._height = height;
 
-        this._texture.bind(TEXTURE_UNIT, (ctx) => {
-            ctx.loadPixelData(width, height, null);
-        });
+        this._texture.bind(TEXTURE_UNIT, (ctx) => ctx.loadPixelData(width, height, null));
 
         this._forceRedraw = true;
 
@@ -119,7 +117,7 @@ export default class PickingManager {
     getFeatureAt(x, y) {
         const gl = this._gl;
 
-        if (x < 0 || x > this._width || y < 0 || y > this._height) {
+        if (Math.abs(x) > this._width / 2  || Math.abs(y) > this._heigth / 2) {
             return null;
         }
 
@@ -145,9 +143,7 @@ export default class PickingManager {
         this._texture = utils.destroy(this._texture);
 
         if (this._featureSets) {
-            this._featureSets.forEach((featureSet) => {
-                this._colorManagers.delete(featureSet);
-            });
+            this._featureSets.forEach((featureSet) => this._colorManagers.delete(featureSet));
 
             this._listeners.removeTarget(this._featureSets);
 

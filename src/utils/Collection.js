@@ -57,6 +57,16 @@ export default class Collection {
         return this;
     }
 
+    find(predicate) {
+        const len = this._items.length;
+
+        for (let i = 0; i < len; i++) {
+            if (predicate(this._items[i])) {
+                return this._items[i];
+            }
+        }
+    }
+
     destroy() {
         this._items = [];
     }

@@ -2,11 +2,12 @@ import * as utils from './utils';
 import * as Hammer from 'hammerjs';
 
 export default class Controls {
-    constructor(canvas, controller) {
+    constructor(canvas, controller, featureInteractionProvider) {
         this._canvas = canvas;
         this._controller = controller;
         this._manager = new Hammer.Manager(canvas);
-        this._canvasListener = null;
+        this._canvasListeners = [];
+        this._featureInteractionProvider = featureInteractionProvider;
 
         this._panning = false;
         this._pinching = false;
@@ -51,7 +52,13 @@ export default class Controls {
 
         this._manager.on('doubletap', this._onTap.bind(this));
 
-        this._canvas.addEventListener('wheel', this._canvasListener = this._onWheel.bind(this));
+        this._registerCanvasListener('wheel', this._onWheel.bind(this));
+        this._registerCanvasListener('mousemove', this._onMouseMove.bind(this));
+    }
+
+    _registerCanvasListener(event, listener) {
+        this._canvasListeners.push(listener);
+        this._canvas.addEventListener(event, listener);
     }
 
     _onPan(e) {
@@ -179,28 +186,49 @@ export default class Controls {
     }
 
     _onTap(e) {
-        if (e.tapCount != 2) {
-            return;
-        }
+        switch (e.tapCount) {
+            case 1:
+                return this._applyClick(e.center.x, e.center.y);
 
-        this._applyRescale(this._controller.getScale() * 1.3, e.center.x, e.center.y);
+            case 2:
+                return this._applyRescale(this._controller.getScale() * 1.3, e.center.x, e.center.y);
+
+            default:
+        }
+    }
+
+    _translateClientCoordinates(clientX, clientY) {
+        const canvasRect = this._canvas.getBoundingClientRect();
+
+        return {
+            x: (clientX - canvasRect.left - canvasRect.width / 2),
+            y: -(clientY - canvasRect.top - canvasRect.height / 2)
+        };
     }
 
     _applyRescale(scale, clientX, clientY) {
-        const canvasRect = this._canvas.getBoundingClientRect();
+        const {x, y} = this._translateClientCoordinates(clientX, clientY);
 
-        this._controller.rescaleAroundCenter(
-            scale,
-            (clientX - canvasRect.left - canvasRect.width / 2) / scale,
-            (clientY - canvasRect.top - canvasRect.height / 2) / scale
-        );
+        this._controller.rescaleAroundCenter(scale, x / scale, y / scale);
+    }
+
+    _applyClick(clientX, clientY) {
+        const {x, y} = this._translateClientCoordinates(clientX, clientY);
+
+        this._featureInteractionProvider.click(x, y);
+    }
+
+    _onMouseMove(e) {
+        const {x, y} = this._translateClientCoordinates(e.clientX, e.clientY);
+
+        this._featureInteractionProvider.update(x, y);
     }
 
     destroy() {
         this._manager = utils.destroy(this._manager);
 
-        if (this._canvasListener) {
-            this._canvas.removeEventListener(this._canvasListener);
+        if (this._canvasListeners) {
+            this._canvasListeners.forEach(this._canvas.removeEventListener.bind(this._canvas));
             this._canvasListener = null;
         }
     }

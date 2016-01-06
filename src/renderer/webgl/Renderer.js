@@ -6,6 +6,7 @@ import ProjectionMatrix from './ProjectionMatrix';
 import TransformationMatrix from './TransformationMatrix';
 import * as utils from '../../utils';
 import ListenerGroup from '../../utils/ListenerGroup';
+import Observable from '../../utils/Observable';
 
 export default class Renderer {
     constructor(canvas, imageUrl, transformation, featureSets) {
@@ -30,6 +31,11 @@ export default class Renderer {
         this._renderPending = false;
         this._destroyed = false;
 
+        this.observable = {
+            render: new Observable()
+        };
+        Observable.delegate(this, this.observable);
+
         this._registerFeatureSets();
 
         gl.disable(gl.DEPTH_TEST);
@@ -52,9 +58,9 @@ export default class Renderer {
 
         gl.enable(gl.BLEND);
 
-        this._featureSets.forEach((featureSet) => {
-            this._glFeatureSets.get(featureSet).render();
-        });
+        this._featureSets.forEach((featureSet) => this._glFeatureSets.get(featureSet).render());
+
+        this.observable.render.fire();
     }
 
     _isFramebufferCurrent() {

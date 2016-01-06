@@ -6,6 +6,7 @@ import Controls from './Controls';
 import Controller from './Controller';
 import WebglRenderer from './renderer/webgl/Renderer';
 import Collection from './utils/TrackingCollection';
+import FeatureInteractionProvider from './FeatureInteractionProvider';
 
 export default class Viewer {
     constructor(canvas, imageUrl) {
@@ -15,8 +16,14 @@ export default class Viewer {
         this._listeners = new ListenerGroup();
         this._renderer = new WebglRenderer(canvas, imageUrl, this._transformation, this._featureSets);
         this._renderControl = new RenderControl(this._renderer);
+        this._featureInteractionProvider = new FeatureInteractionProvider(
+            this._featureSets,
+            this._renderer.getFeatureAt.bind(this._renderer)
+        );
         this._controller = null;
         this._controls = null;
+
+        this._listeners.add(this._renderer, 'render', this._onRender.bind(this));
 
         this._readyPromise = this._init();
     }
@@ -25,7 +32,7 @@ export default class Viewer {
         return this._renderer.ready()
             .then(() => {
                 this._controller = new Controller(this._renderControl, this._transformation);
-                this._controls = new Controls(this._canvas, this._controller);
+                this._controls = new Controls(this._canvas, this._controller, this._featureInteractionProvider);
 
                 this._renderControl.render();
             });
@@ -33,6 +40,10 @@ export default class Viewer {
 
     _onFeatureSetChange() {
         this._renderControl.render();
+    }
+
+    _onRender() {
+        this._featureInteractionProvider.update();
     }
 
     getRenderer() {
@@ -90,7 +101,11 @@ export default class Viewer {
     }
 
     destroy() {
+        if (this._renderer) {
+            this._listeners.removeTarget(this._renderer);
+        }
         this._renderer = utils.destroy(this._renderer);
+        
         this._controller = utils.destroy(this._controller);
         this._controls = utils.destroy(this._controls);
         this._transformation = utils.destroy(this._transformation);

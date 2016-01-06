@@ -104,17 +104,15 @@ export default class ImageLayer {
 
     _updateProjectionMatrix() {
         this._dependencyTracker.update(this._projectionMatrix, () => {
-            this._program.use((ctx) => {
-                ctx.uniformMatrix4fv('u_ProjectionMatrix', this._projectionMatrix.getMatrix());
-            });
+            this._program.use((ctx) =>
+                ctx.uniformMatrix4fv('u_ProjectionMatrix', this._projectionMatrix.getMatrix()));
         });
     }
 
     _updateTransformationMatrix() {
         this._dependencyTracker.update(this._transformationMatrix, () => {
-            this._program.use((ctx) => {
-                ctx.uniformMatrix4fv('u_TransformationMatrix', this._transformationMatrix.getMatrix());
-            });
+            this._program.use((ctx) =>
+                ctx.uniformMatrix4fv('u_TransformationMatrix', this._transformationMatrix.getMatrix()));
         });
     }
 
@@ -145,9 +143,7 @@ export default class ImageLayer {
 
         this._texture.bind(TEXTURE_UNIT);
 
-        this._program.use((ctx) => {
-            ctx.uniform1i('u_Sampler', TEXTURE_UNIT);
-        });
+        this._program.use((ctx) => ctx.uniform1i('u_Sampler', TEXTURE_UNIT));
 
         this._updateProjectionMatrix();
         this._updateTransformationMatrix();
@@ -185,13 +181,10 @@ function loadImage(url) {
     const image = new Image();
 
     return new Promise((resolve, reject) => {
-        image.addEventListener('load', () => {
-            resolve(image);
-        });
+        image.addEventListener('load', () => resolve(image));
 
-        image.addEventListener('error', () => {
-            reject(new Error('image load for ' + url + ' failed'));
-        });
+        image.addEventListener('error', () =>
+            reject(new Error('image load for ' + url + ' failed')));
 
         image.src = url;
     });

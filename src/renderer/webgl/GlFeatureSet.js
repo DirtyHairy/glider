@@ -25,17 +25,15 @@ export default class GlFeatureSet {
 
     _updateProjectionMatrix() {
         this._dependencyTracker.update(this._projectionMatrix, () => {
-            this._program.use((ctx) => {
-                ctx.uniformMatrix4fv('u_ProjectionMatrix', this._projectionMatrix.getMatrix());
-            });
+            this._program.use((ctx) =>
+                ctx.uniformMatrix4fv('u_ProjectionMatrix', this._projectionMatrix.getMatrix()));
         });
     }
 
     _updateTransformationMatrix() {
         this._dependencyTracker.update(this._transformationMatrix, () => {
-            this._program.use((ctx) => {
-                ctx.uniformMatrix4fv('u_TransformationMatrix', this._transformationMatrix.getMatrix());
-            });
+            this._program.use((ctx) =>
+                ctx.uniformMatrix4fv('u_TransformationMatrix', this._transformationMatrix.getMatrix()));
         });
     }
 
