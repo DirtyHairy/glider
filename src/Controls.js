@@ -54,6 +54,9 @@ export default class Controls {
 
         this._registerCanvasListener('wheel', this._onWheel.bind(this));
         this._registerCanvasListener('mousemove', this._onMouseMove.bind(this));
+
+        // Supress mouse emulation
+        this._registerCanvasListener('touchstart', (e) => e.preventDefault());
     }
 
     _registerCanvasListener(event, listener) {
