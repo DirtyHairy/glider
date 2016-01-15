@@ -16,6 +16,7 @@ export default class Renderer {
         this._canvas = canvas;
         this._transformation = transformation;
         this._animations = [];
+        this._animationFrameHandle = null;
         this._dependencyTracker = new DependencyTracker();
         this._listeners = new ListenerGroup();
         this._projectionMatrix = new ProjectionMatrix(canvas.width, canvas.heigth);
@@ -70,7 +71,13 @@ export default class Renderer {
     }
 
     _scheduleAnimations() {
-        requestAnimationFrame((timestamp) => {
+        if (this._animationFrameHandle !== null) {
+            return;
+        }
+
+        this._animationFrameHandle = requestAnimationFrame((timestamp) => {
+            this._animationFrameHandle = null;
+
             let len = this._animations.length,
                 i = 0,
                 render = false;
@@ -184,6 +191,11 @@ export default class Renderer {
             this._listeners.removeTarget(this._glFeatureSets);
 
             this._featureSets = null;
+        }
+
+        if (this._animationFrameHandle) {
+            cancelAnimationFrame(this._animationFrameHandle);
+            this._animationFrameHandle = null;
         }
 
         this._destroyed = true;

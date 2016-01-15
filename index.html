@@ -15,89 +15,115 @@
     <canvas id="viewer-canvas" width="10" height="10"></canvas>
 
     <script>
-        var canvas = document.getElementById('viewer-canvas'),
-            viewer = new glider.Viewer(canvas, './koala.jpg');
+        function initializeViewer() {
+            var canvas = document.getElementById('viewer-canvas'),
+                viewer = new glider.Viewer(canvas, './koala.jpg'),
+                resizeHandler;
 
-        viewer.ready()
-            .then(
-                function() {
-                    function resizeCanvas() {
-                        canvas.width = window.innerWidth;
-                        canvas.height = window.innerHeight;
-                        viewer.applyCanvasResize();
+            viewer.ready()
+                .then(
+                    function() {
+                        resizeHandler = function resizeCanvas() {
+                            canvas.width = window.innerWidth;
+                            canvas.height = window.innerHeight;
+                            viewer.applyCanvasResize();
+                        }
+
+                        resizeHandler();
+                        window.addEventListener('resize', resizeHandler);
+
+                        viewer.rescale(0.3);
+                    },
+                    function(err) {
+                        console.log('renderer failed to initialize', err);
                     }
+                );
 
-                    resizeCanvas();
-                    window.addEventListener('resize', resizeCanvas);
+            var features = new glider.FeatureSet(),
+                feature = new glider.Quad({
+                    left: 0,
+                    bottom: 100,
+                    width: 200,
+                    height: 200,
+                    fillColor: new glider.RGBA(0, 0, 0, 0.4)
+                });
 
-                    viewer.rescale(0.3);
-                },
-                function(err) {
-                    console.log('renderer failed to initialize', err);
+            features.add(feature);
+
+            var animationHandle = null,
+                phase = 0,
+                frozenPhase = 0;
+
+            function startAnimation() {
+                if (animationHandle !== null) {
+                    return;
                 }
-            );
 
-        var features = new glider.FeatureSet(),
-            feature = new glider.Quad({
-                left: 0,
-                bottom: 100,
-                width: 200,
-                height: 200,
-                fillColor: new glider.RGBA(0, 0, 0, 0.4)
+                var ref = Date.now();
+
+                animationHandle = setInterval(function() {
+                    var delta = Date.now() - ref;
+
+                    phase = frozenPhase + 2 * Math.PI / 5000 * delta;
+
+                    feature
+                        .setLeft(100 * Math.sin(phase))
+                        .setBottom(100 * Math.cos(phase));
+                }, 10)
+            }
+
+            function stopAnimation() {
+                if (animationHandle !== null) {
+                    clearInterval(animationHandle);
+                    frozenPhase = phase;
+                    animationHandle = null;
+                }
+            }
+
+            features.addListener('pointerEnter', function(feature) {
+                feature.setFillColor(new glider.RGBA(1, 0, 0, 1));
             });
 
-        features.add(feature);
+            features.addListener('pointerLeave', function(feature) {
+                feature.setFillColor(new glider.RGBA(0, 0, 0, 0.4));
+            });
 
-        var animationHandle = null,
-            phase = 0,
-            frozenPhase = 0;
+            features.addListener('click', function() {
+                if (animationHandle === null) {
+                    startAnimation();
+                } else {
+                    stopAnimation();
+                }
+            });
 
-        function startAnimation() {
-            if (animationHandle !== null) {
-                return;
-            }
+            viewer.addFeatureSet(features);
 
-            var ref = Date.now();
+            return function() {
+                if (!viewer) {
+                    return;
+                }
 
-            animationHandle = setInterval(function() {
-                var delta = Date.now() - ref;
-
-                phase = frozenPhase + 2 * Math.PI / 5000 * delta;
-
-                feature
-                    .setLeft(100 * Math.sin(phase))
-                    .setBottom(100 * Math.cos(phase));
-            }, 10)
-        }
-
-        function stopAnimation() {
-            if (animationHandle !== null) {
-                clearTimeout(animationHandle);
-                frozenPhase = phase;
-                animationHandle = null;
-            }
-        }
-
-        features.addListener('pointerEnter', function(feature) {
-            feature.setFillColor(new glider.RGBA(1, 0, 0, 1));
-        });
-
-        features.addListener('pointerLeave', function(feature) {
-            feature.setFillColor(new glider.RGBA(0, 0, 0, 0.4));
-        });
-
-        features.addListener('click', function() {
-            if (animationHandle === null) {
-                startAnimation();
-            } else {
                 stopAnimation();
+                if (resizeHandler) {
+                    window.removeEventListener('resize', resizeHandler);
+                }
+                viewer.destroy();
+                viewer = canvas = resizeHandler = features = feature = null;
             }
-        });
+        }
 
-        viewer.addFeatureSet(features);
+        window.destroyViewer = initializeViewer();
 
-        window.renderer = viewer.getRenderer();
-        window.features = features;
+        function leakStressTest() {
+            setTimeout(function() {
+                destroyViewer();
+
+                setTimeout(function() {
+                    destroyViewer = initializeViewer();
+                    leakStressTest();
+                }, 2000)
+            }, 1000);
+        }
     </script>
 </body>
 

@@ -6,7 +6,7 @@ export default class Controls {
         this._canvas = canvas;
         this._controller = controller;
         this._manager = new Hammer.Manager(canvas);
-        this._canvasListeners = [];
+        this._canvasListeners = {};
         this._featureInteractionProvider = featureInteractionProvider;
 
         this._panning = false;
@@ -62,7 +62,11 @@ export default class Controls {
     }
 
     _registerCanvasListener(event, listener) {
-        this._canvasListeners.push(listener);
+        if (!this._canvasListeners[event]) {
+            this._canvasListeners[event] = [];
+        }
+
+        this._canvasListeners[event].push(listener);
         this._canvas.addEventListener(event, listener);
     }
 
@@ -231,7 +235,11 @@ export default class Controls {
         this._manager = utils.destroy(this._manager);
 
         if (this._canvasListeners) {
-            this._canvasListeners.forEach(this._canvas.removeEventListener.bind(this._canvas));
+            Object.keys(this._canvasListeners).forEach(
+                (event) => this._canvasListeners[event].forEach(
+                    (listener) => this._canvas.removeEventListener(event, listener)
+                )
+            );
             this._canvasListener = null;
         }
     }

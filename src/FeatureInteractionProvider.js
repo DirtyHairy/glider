@@ -1,4 +1,5 @@
 import Throttle from './utils/Throttle';
+import * as utils from './utils';
 
 export default class FeatureInteractionProvider {
     constructor(featureSets, pickingProvider) {
@@ -63,5 +64,9 @@ export default class FeatureInteractionProvider {
         if (featureSet) {
             featureSet._notifyClick(feature);
         }
+    }
+
+    destroy() {
+        this._throttledUpdate = utils.destroy(this._throttledUpdate);
     }
 }

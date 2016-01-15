@@ -109,6 +109,8 @@ export default class Viewer {
         this._controller = utils.destroy(this._controller);
         this._controls = utils.destroy(this._controls);
         this._transformation = utils.destroy(this._transformation);
+        this._featureInteractionProvider = utils.destroy(this._featureInteractionProvider);
+        this._renderControl = utils.destroy(this._renderControl);
 
         if (this._featureSets) {
             this._featureSets.forEach((featureSet) => {

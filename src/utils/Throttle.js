@@ -38,11 +38,22 @@ export default class Throttle {
         this._interval = interval;
 
         if (this._timeoutHandle !== null) {
-            clearTimeout(this._timeoutHandle);
-            this._timeoutHandle = null;
+            this.cancel();
             this.call(...this._args);
         }
 
         return this;
+    }
+
+    cancel() {
+        if (this._timeoutHandle) {
+            clearTimeout(this._timeoutHandle);
+            this._timeoutHandle = null;
+        }
+    }
+
+    destroy() {
+        this.cancel();
+        this._cb = null;
     }
 }

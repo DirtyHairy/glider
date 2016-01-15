@@ -173,6 +173,7 @@ export default class PickingManager {
     destroy() {
         this._fbo = utils.destroy(this._fbo);
         this._texture = utils.destroy(this._texture);
+        this._pickingBuffer = utils.destroy(this._pickingBuffer);
 
         if (this._featureSets) {
             this._featureSets.forEach((featureSet) => this._colorManagers.delete(featureSet));
