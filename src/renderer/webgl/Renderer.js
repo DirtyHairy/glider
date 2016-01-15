@@ -166,6 +166,10 @@ export default class Renderer {
         return this._imageLayer.ready();
     }
 
+    getPickingProvider() {
+        return this._pickingManager;
+    }
+
     destroy() {
         this._imageLayer = utils.destroy(this._imageLayer);
         this._transformationMatrix = utils.destroy(this._transformationMatrix);
@@ -186,5 +190,4 @@ export default class Renderer {
     }
 }
 
-utils.delegate(Renderer.prototype, '_pickingManager', 'getFeatureAt');
 utils.delegate(Renderer.prototype, '_imageLayer', ['getImageWidth', 'getImageHeight']);

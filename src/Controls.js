@@ -54,9 +54,6 @@ export default class Controls {
 
         this._registerCanvasListener('wheel', this._onWheel.bind(this));
         this._registerCanvasListener('mousemove', this._onMouseMove.bind(this));
-
-        // Supress mouse emulation
-        this._registerCanvasListener('touchstart', (e) => e.preventDefault());
     }
 
     _registerCanvasListener(event, listener) {
@@ -147,7 +144,7 @@ export default class Controls {
         const scale = this._controller.getScale();
 
         this._applyPinch(e);
-        this._controller.kineticTranslate(-e.velocityX / scale, -e.velocityY / scale);
+        this._controller.kineticTranslate(e.velocityX / scale, -e.velocityY / scale);
 
         this._pinching = false;
     }
@@ -172,13 +169,11 @@ export default class Controls {
         this._controller
             .startBatch()
             .rescale(this._oldScale)
-            .translateAbsolute(this._oldTranslateX + e.deltaX/this._oldScale, this._oldTranslateY + e.deltaY/this._oldScale);
+            .translateAbsolute(this._oldTranslateX + e.deltaX/this._oldScale, this._oldTranslateY - e.deltaY/this._oldScale);
 
         this._applyRescale(newScale, e.center.x, e.center.y);
 
-        this._controller
-            .rescaleAroundCenter(newScale, e.center.x/newScale, e.center.y/newScale)
-            .commitBatch();
+        this._controller.commitBatch();
     }
 
     _onWheel(e) {

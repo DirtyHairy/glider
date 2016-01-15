@@ -30,8 +30,6 @@ export default class PickingBuffer {
     }
 
     update(x, y) {
-        console.log('updating buffer');
-
         const gl = this._gl,
             {x: windowX, y: windowY} = this._windowCoordinates(x, y),
             shift = Math.ceil(this._extend / 2);

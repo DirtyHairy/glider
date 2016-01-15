@@ -21,7 +21,7 @@ export default class PickingManager {
         this._width = width;
         this._height = height;
         this._forceRedraw = true;
-        this._pickingBuffer = new PickingBuffer(200, width, height, gl);
+        this._pickingBuffer = new PickingBuffer(400, width, height, gl);
         this._pickingBufferMiss = 0;
         this._pickingBufferThreshold = 3;
 
@@ -146,14 +146,12 @@ export default class PickingManager {
 
         var pixelData;
 
-        if (this._pickingBuffer.contains(x, y) || this._pickingBufferMiss++ > this._pickingBufferThreshold) {
+        if (this._pickingBuffer.contains(x, y) || ++this._pickingBufferMiss > this._pickingBufferThreshold) {
             pixelData = this._pickingBuffer.read(x, y);
             this._pickingBufferMiss = 0;
         }
 
         if (!pixelData) {
-            console.log(`not using buffer, threshold is ${this._pickingBufferMiss}`);
-
             pixelData = new Uint8Array(4);
             gl.readPixels(Math.floor(x + this._width / 2), Math.floor(y + this._height / 2),
                 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelData);
@@ -166,6 +164,10 @@ export default class PickingManager {
             feature = (featureSet && featureIdx < featureSet.count()) ? featureSet.get(featureIdx) : null;
 
         return feature;
+    }
+
+    isExpensive(x, y) {
+        return !this._pickingBuffer.contains(x, y);
     }
 
     destroy() {

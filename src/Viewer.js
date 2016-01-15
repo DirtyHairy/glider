@@ -18,7 +18,7 @@ export default class Viewer {
         this._renderControl = new RenderControl(this._renderer);
         this._featureInteractionProvider = new FeatureInteractionProvider(
             this._featureSets,
-            this._renderer.getFeatureAt.bind(this._renderer)
+            this._renderer.getPickingProvider()
         );
         this._controller = null;
         this._controls = null;
