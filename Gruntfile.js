@@ -4,6 +4,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-browserify');
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-contrib-connect');
+    grunt.loadNpmTasks('grunt-contrib-uglify');
 
     grunt.initConfig({
         browserify: {
@@ -41,10 +42,21 @@ module.exports = function(grunt) {
                     port: 2718
                 }
             }
+        },
+        uglify: {
+            main: {
+                files: {
+                    'glider.min.js': 'glider.js'
+                },
+                options: {
+                    mangle: true,
+                    compress: true
+                }
+            }
         }
     });
 
-    grunt.registerTask('default', ['browserify']);
+    grunt.registerTask('default', ['browserify', 'uglify']);
     grunt.registerTask('devel', ['browserify', 'connect', 'watch']);
 
 };

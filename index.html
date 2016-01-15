@@ -2,7 +2,6 @@
 
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
-    <script src="glider.js"></script>
     <style>
         body {
             overflow: hidden;
@@ -112,7 +111,38 @@
             }
         }
 
-        window.destroyViewer = initializeViewer();
+        (function() {
+            function bootstrap() {
+                window.destroyViewer = initializeViewer();
+            }
+
+            function decodeQueryParams() {
+                var query = window.location.search.substring(1),
+                    vars = query.split('&'),
+                    queryParams = {};
+
+                vars.forEach(function(variable) {
+                    var pair = variable.split('=');
+
+                    if (!pair[0]) {
+                        return;
+                    }
+
+                    queryParams[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1])
+                });
+
+                return queryParams;
+            }
+
+            var script = document.createElement('script'),
+                queryParams = decodeQueryParams();
+
+            script.async = true;
+            script.addEventListener('load', bootstrap);
+            script.src = queryParams.hasOwnProperty('dev') ? 'glider.js' : 'glider.min.js';
+
+            document.head.appendChild(script);
+        })();
 
         function leakStressTest() {
             setTimeout(function() {
