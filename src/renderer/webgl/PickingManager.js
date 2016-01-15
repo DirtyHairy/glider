@@ -4,6 +4,7 @@ import FrameBufferObject from './glutil/FrameBufferObject';
 import PickingColorManager from './PickingColorManager';
 import * as utils from '../../utils';
 import ListenerGroup from '../../utils/ListenerGroup';
+import PickingBuffer from './PickingBuffer';
 
 const TEXTURE_UNIT = 1;
 
@@ -20,6 +21,9 @@ export default class PickingManager {
         this._width = width;
         this._height = height;
         this._forceRedraw = true;
+        this._pickingBuffer = new PickingBuffer(200, width, height, gl);
+        this._pickingBufferMiss = 0;
+        this._pickingBufferThreshold = 3;
 
         this._setupFramebuffer();
         this._registerFeatureSets();
@@ -78,29 +82,42 @@ export default class PickingManager {
 
     _render() {
         const gl = this._gl;
+        let redraw = false;
 
-        if (!this._forceRedraw &&
-                this._dependencyTracker.isCurrent(this._projectionMatrix) &&
-                this._dependencyTracker.isCurrent(this._transformationMatrix) &&
-                this._dependencyTracker.allCurrent(this._featureSets)
-            )
-        {
-            return false;
+        const execute = () => {
+            this._fbo.bind();
+
+            gl.clearColor(0, 0, 0, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.disable(gl.BLEND);
+
+            this._featureSets.forEach((featureSet) => {
+                this._glFeatureSets.get(featureSet).renderPicking(this._colorManagers.get(featureSet));
+            });
+
+            this._pickingBuffer.invalidate();
+            this._pickingBufferMiss = 0;
+
+            this._dependencyTracker.setCurrent(this._projectionMatrix);
+            this._dependencyTracker.setCurrent(this._transformationMatrix);
+            this._dependencyTracker.setAllCurrent(this._featureSets.items());
+
+            this._forceRedraw = false;
+
+            redraw = true;
+        };
+
+        if (this._forceRedraw) {
+            execute();
+        } else {
+            this._dependencyTracker.updateAll([
+                    this._projectionMatrix,
+                    this._transformationMatrix,
+                    ...this._featureSets.items()
+            ], execute);
         }
 
-        this._fbo.bind();
-
-        gl.clearColor(0, 0, 0, 1);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.disable(gl.BLEND);
-
-        this._featureSets.forEach((featureSet) => {
-            this._glFeatureSets.get(featureSet).renderPicking(this._colorManagers.get(featureSet));
-        });
-
-        this._forceRedraw = false;
-
-        return true;
+        return redraw;
     }
 
     adjustViewportSize(width, height) {
@@ -110,6 +127,8 @@ export default class PickingManager {
         this._texture.bind(TEXTURE_UNIT, (ctx) => ctx.loadPixelData(width, height, null));
 
         this._forceRedraw = true;
+
+        this._pickingBuffer.adjustViewportSize(width, height);
 
         return this;
     }
@@ -125,9 +144,20 @@ export default class PickingManager {
             this._fbo.bind();
         }
 
-        const pixelData = new Uint8Array(4);
+        var pixelData;
 
-        gl.readPixels(x + this._width / 2, y + this._height / 2, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelData);
+        if (this._pickingBuffer.contains(x, y) || this._pickingBufferMiss++ > this._pickingBufferThreshold) {
+            pixelData = this._pickingBuffer.read(x, y);
+            this._pickingBufferMiss = 0;
+        }
+
+        if (!pixelData) {
+            console.log(`not using buffer, threshold is ${this._pickingBufferMiss}`);
+
+            pixelData = new Uint8Array(4);
+            gl.readPixels(Math.floor(x + this._width / 2), Math.floor(y + this._height / 2),
+                1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelData);
+        }
 
         const featureSetIdx =     (pixelData[0] << 8) | pixelData[1],
             featureIdx =        (pixelData[2] << 8) | pixelData[3],

@@ -15,6 +15,16 @@ export default class DependencyTracker {
         return this;
     }
 
+    setAllCurrent(targets) {
+        const nTargets = targets.length;
+
+        for (let i = 0; i < nTargets; i++) {
+            this.setCurrent(targets[i]);
+        }
+
+        return this;
+    }
+
     update(target, cb) {
         if (this.isCurrent(target)) {
             return this;
@@ -47,13 +57,9 @@ export default class DependencyTracker {
             return this;
         }
 
-        const nTargets = targets.length;
-
         cb();
 
-        for (let i = 0; i < nTargets; i++) {
-            this.setCurrent(targets[i]);
-        }
+        this.setAllCurrent(targets);
 
         return this;
     }

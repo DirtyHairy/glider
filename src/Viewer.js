@@ -5,7 +5,7 @@ import RenderControl from './RenderControl';
 import Controls from './Controls';
 import Controller from './Controller';
 import WebglRenderer from './renderer/webgl/Renderer';
-import Collection from './utils/TrackingCollection';
+import Collection from './utils/Collection';
 import FeatureInteractionProvider from './FeatureInteractionProvider';
 
 export default class Viewer {
@@ -105,7 +105,7 @@ export default class Viewer {
             this._listeners.removeTarget(this._renderer);
         }
         this._renderer = utils.destroy(this._renderer);
-        
+
         this._controller = utils.destroy(this._controller);
         this._controls = utils.destroy(this._controls);
         this._transformation = utils.destroy(this._transformation);

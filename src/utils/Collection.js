@@ -67,6 +67,10 @@ export default class Collection {
         }
     }
 
+    items() {
+        return this._items;
+    }
+
     destroy() {
         this._items = [];
     }

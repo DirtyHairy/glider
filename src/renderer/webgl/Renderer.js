@@ -45,37 +45,28 @@ export default class Renderer {
     _immediateRender() {
         const gl = this._gl;
 
-        if (this._destroyed || this._isFramebufferCurrent()) {
+        if (this._destroyed) {
             return;
         }
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.clearColor(1, 1, 1, 1);
-        gl.clear(gl.COLOR_BUFFER_BIT);
+        this._dependencyTracker.updateAll([
+            this._projectionMatrix,
+            this._transformationMatrix,
+            ...this._featureSets.items()
+        ], () => {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.clearColor(1, 1, 1, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
 
-        gl.disable(gl.BLEND);
-        this._imageLayer.render();
+            gl.disable(gl.BLEND);
+            this._imageLayer.render();
 
-        gl.enable(gl.BLEND);
+            gl.enable(gl.BLEND);
 
-        this._featureSets.forEach((featureSet) => this._glFeatureSets.get(featureSet).render());
+            this._featureSets.forEach((featureSet) => this._glFeatureSets.get(featureSet).render());
 
-        this.observable.render.fire();
-    }
-
-    _isFramebufferCurrent() {
-        let isCurrent = this._dependencyTracker.isCurrent(this._projectionMatrix) &&
-            this._dependencyTracker.isCurrent(this._transformationMatrix);
-
-        for (let i = 0; i < this._featureSets.length; i++) {
-            if (!isCurrent) {
-                break;
-            }
-
-            isCurrent = isCurrent && this._dependencyTracker.isCurrent(this._featureSets[i]);
-        }
-
-        return isCurrent;
+            this.observable.render.fire();
+        });
     }
 
     _scheduleAnimations() {
