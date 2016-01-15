@@ -23,6 +23,10 @@ export default class FeatureInteractionProvider {
             this._initialized = true;
         }
 
+        if (!this._initialized) {
+            return this;
+        }
+
         this._throttledUpdate.setInterval(
             this._pickingProvider.isExpensive(this._pointerX, this._pointerY) ?
                 this._longInterval : this._shortInterval
