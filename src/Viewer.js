@@ -4,17 +4,18 @@ import Transformation from './Transformation';
 import RenderControl from './RenderControl';
 import Controls from './Controls';
 import Controller from './Controller';
-import WebglRenderer from './renderer/webgl/Renderer';
+import * as rendererFactory from './renderer/factory';
 import Collection from './utils/Collection';
 import FeatureInteractionProvider from './FeatureInteractionProvider';
 
 export default class Viewer {
-    constructor(canvas, imageUrl) {
+    constructor(rendererType, canvas, imageUrl) {
         this._canvas = canvas;
         this._transformation = new Transformation();
         this._featureSets = new Collection();
         this._listeners = new ListenerGroup();
-        this._renderer = new WebglRenderer(canvas, imageUrl, this._transformation, this._featureSets);
+        this._renderer = rendererFactory.createRenderer(rendererType,
+            canvas, imageUrl, this._transformation, this._featureSets);
         this._renderControl = new RenderControl(this._renderer);
         this._featureInteractionProvider = new FeatureInteractionProvider(
             this._featureSets,

@@ -14,146 +14,158 @@
     <canvas id="viewer-canvas" width="10" height="10"></canvas>
 
     <script>
-        function initializeViewer() {
-            var canvas = document.getElementById('viewer-canvas'),
-                viewer = new glider.Viewer(canvas, './koala.jpg'),
-                resizeHandler;
+(function() {
+    function initializeViewer() {
+        var canvas = document.getElementById('viewer-canvas'),
+            viewer = new glider.Viewer(getRendererType(), canvas, './koala.jpg'),
+            resizeHandler;
 
-            viewer.ready()
-                .then(
-                    function() {
-                        resizeHandler = function resizeCanvas() {
-                            canvas.width = window.innerWidth;
-                            canvas.height = window.innerHeight;
-                            viewer.applyCanvasResize();
-                        }
-
-                        resizeHandler();
-                        window.addEventListener('resize', resizeHandler);
-
-                        viewer.rescale(0.3);
-                    },
-                    function(err) {
-                        console.log('renderer failed to initialize', err);
+        viewer.ready()
+            .then(
+                function() {
+                    resizeHandler = function resizeCanvas() {
+                        canvas.width = window.innerWidth;
+                        canvas.height = window.innerHeight;
+                        viewer.applyCanvasResize();
                     }
-                );
 
-            var features = new glider.FeatureSet(),
-                feature = new glider.Quad({
-                    left: 0,
-                    bottom: 100,
-                    width: 200,
-                    height: 200,
-                    fillColor: new glider.RGBA(0, 0, 0, 0.4)
-                });
+                    resizeHandler();
+                    window.addEventListener('resize', resizeHandler);
 
-            features.add(feature);
-
-            var animationHandle = null,
-                phase = 0,
-                frozenPhase = 0;
-
-            function startAnimation() {
-                if (animationHandle !== null) {
-                    return;
+                    viewer.rescale(0.3);
+                },
+                function(err) {
+                    console.log('renderer failed to initialize', err);
                 }
+            );
 
-                var ref = Date.now();
+        var features = new glider.FeatureSet(),
+            feature = new glider.Quad({
+                left: 0,
+                bottom: 100,
+                width: 200,
+                height: 200,
+                fillColor: new glider.RGBA(0, 0, 0, 0.4)
+            });
 
-                animationHandle = setInterval(function() {
-                    var delta = Date.now() - ref;
+        features.add(feature);
 
-                    phase = frozenPhase + 2 * Math.PI / 5000 * delta;
+        var animationHandle = null,
+            phase = 0,
+            frozenPhase = 0;
 
-                    feature
-                        .setLeft(100 * Math.sin(phase))
-                        .setBottom(100 * Math.cos(phase));
-                }, 10)
+        function startAnimation() {
+            if (animationHandle !== null) {
+                return;
             }
 
-            function stopAnimation() {
-                if (animationHandle !== null) {
-                    clearInterval(animationHandle);
-                    frozenPhase = phase;
-                    animationHandle = null;
-                }
+            var ref = Date.now();
+
+            animationHandle = setInterval(function() {
+                var delta = Date.now() - ref;
+
+                phase = frozenPhase + 2 * Math.PI / 5000 * delta;
+
+                feature
+                    .setLeft(100 * Math.sin(phase))
+                    .setBottom(100 * Math.cos(phase));
+            }, 10)
+        }
+
+        function stopAnimation() {
+            if (animationHandle !== null) {
+                clearInterval(animationHandle);
+                frozenPhase = phase;
+                animationHandle = null;
             }
+        }
 
-            features.addListener('pointerEnter', function(feature) {
-                feature.setFillColor(new glider.RGBA(1, 0, 0, 1));
-            });
+        features.addListener('pointerEnter', function(feature) {
+            feature.setFillColor(new glider.RGBA(1, 0, 0, 1));
+        });
 
-            features.addListener('pointerLeave', function(feature) {
-                feature.setFillColor(new glider.RGBA(0, 0, 0, 0.4));
-            });
+        features.addListener('pointerLeave', function(feature) {
+            feature.setFillColor(new glider.RGBA(0, 0, 0, 0.4));
+        });
 
-            features.addListener('click', function() {
-                if (animationHandle === null) {
-                    startAnimation();
-                } else {
-                    stopAnimation();
-                }
-            });
-
-            viewer.addFeatureSet(features);
-
-            return function() {
-                if (!viewer) {
-                    return;
-                }
-
+        features.addListener('click', function() {
+            if (animationHandle === null) {
+                startAnimation();
+            } else {
                 stopAnimation();
-                if (resizeHandler) {
-                    window.removeEventListener('resize', resizeHandler);
-                }
-                viewer.destroy();
-                viewer = canvas = resizeHandler = features = feature = null;
             }
+        });
+
+        viewer.addFeatureSet(features);
+
+        return function() {
+            if (!viewer) {
+                return;
+            }
+
+            stopAnimation();
+            if (resizeHandler) {
+                window.removeEventListener('resize', resizeHandler);
+            }
+            viewer.destroy();
+            viewer = canvas = resizeHandler = features = feature = null;
         }
+    }
 
-        (function() {
-            function bootstrap() {
-                window.destroyViewer = initializeViewer();
+    function getRendererType() {
+        switch (queryParams.renderer) {
+            case 'canvas':
+                return glider.CANVAS_RENDERER;
+
+            default:
+                return glider.WEBGL_RENDERER;
+        }
+    }
+
+    function decodeQueryParams() {
+        var query = window.location.search.substring(1),
+            vars = query.split('&'),
+            queryParams = {};
+
+        vars.forEach(function(variable) {
+            var pair = variable.split('=');
+
+            if (!pair[0]) {
+                return;
             }
 
-            function decodeQueryParams() {
-                var query = window.location.search.substring(1),
-                    vars = query.split('&'),
-                    queryParams = {};
+            queryParams[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1])
+        });
 
-                vars.forEach(function(variable) {
-                    var pair = variable.split('=');
+        return queryParams;
+    }
 
-                    if (!pair[0]) {
-                        return;
-                    }
+    function leakStressTest() {
+        setTimeout(function() {
+            destroyViewer();
 
-                    queryParams[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1])
-                });
-
-                return queryParams;
-            }
-
-            var script = document.createElement('script'),
-                queryParams = decodeQueryParams();
-
-            script.async = true;
-            script.addEventListener('load', bootstrap);
-            script.src = queryParams.hasOwnProperty('dev') ? 'glider.js' : 'glider.min.js';
-
-            document.head.appendChild(script);
-        })();
-
-        function leakStressTest() {
             setTimeout(function() {
-                destroyViewer();
+                destroyViewer = initializeViewer();
+                leakStressTest();
+            }, 2000)
+        }, 1000);
+    }
 
-                setTimeout(function() {
-                    destroyViewer = initializeViewer();
-                    leakStressTest();
-                }, 2000)
-            }, 1000);
-        }
+    function bootstrap() {
+        window.destroyViewer = initializeViewer();
+        window.initializeViewer = initializeViewer;
+        window.leakStressTest = leakStressTest;
+    }
+
+    var script = document.createElement('script'),
+        queryParams = decodeQueryParams();
+
+    script.async = true;
+    script.addEventListener('load', bootstrap);
+    script.src = queryParams.hasOwnProperty('dev') ? 'glider.js' : 'glider.min.js';
+
+    document.head.appendChild(script);
+})();
     </script>
 </body>
 
