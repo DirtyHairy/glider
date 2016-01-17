@@ -29,8 +29,8 @@ export default class ImageLayer {
 
         ctx.drawImage(
             this._image,
-            (this._canvasWidth - this._image.width) / 2,
-            (this._canvasHeight - this._image.height) / 2
+            -this._image.width / 2,
+            -this._image.height / 2
         );
     }
 

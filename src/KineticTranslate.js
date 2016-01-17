@@ -45,10 +45,6 @@ export default class KineticTranslate {
         return this._finished;
     }
 
-    render() {
-        return !this._finished;
-    }
-
     cancel() {
         this._finished = true;
     }

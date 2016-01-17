@@ -7,6 +7,7 @@ import TransformationMatrix from './TransformationMatrix';
 import * as utils from '../../utils';
 import ListenerGroup from '../../utils/ListenerGroup';
 import Observable from '../../utils/Observable';
+import AnimationQueue from '../AnimationQueue';
 
 export default class Renderer {
     constructor(canvas, imageUrl, transformation, featureSets) {
@@ -15,7 +16,7 @@ export default class Renderer {
         this._gl = gl;
         this._canvas = canvas;
         this._transformation = transformation;
-        this._animations = [];
+        this._animations = new AnimationQueue();
         this._animationFrameHandle = null;
         this._dependencyTracker = new DependencyTracker();
         this._listeners = new ListenerGroup();
@@ -78,27 +79,10 @@ export default class Renderer {
         this._animationFrameHandle = requestAnimationFrame((timestamp) => {
             this._animationFrameHandle = null;
 
-            let len = this._animations.length,
-                i = 0,
-                render = false;
+            this._animations.progress(timestamp);
+            this._immediateRender();
 
-            while (i < len) {
-                this._animations[i].progress(timestamp);
-
-                if (this._animations[i].finished()) {
-                    len--;
-                    this.removeAnimation(this._animations[i]);
-                } else {
-                    render = render || this._animations[i].render();
-                    i++;
-                }
-            }
-
-            if (render) {
-                this._immediateRender();
-            }
-
-            if (len > 0 && ! this._destroyed) {
+            if (this._animations.count() > 0 && ! this._destroyed) {
                 this._scheduleAnimations();
             }
         });
@@ -122,7 +106,7 @@ export default class Renderer {
     }
 
     render() {
-        if (!this._imageLayer.isReady() || this._renderPending || (this._animations && this._animations.length > 0)) {
+        if (!this._imageLayer.isReady() || this._renderPending || this._animations.count() > 0 || this._destroyed) {
             return this;
         }
 
@@ -152,19 +136,14 @@ export default class Renderer {
     }
 
     addAnimation(animation) {
-        this._animations.push(animation);
-
+        this._animations.add(animation);
         this._scheduleAnimations();
 
         return this;
     }
 
     removeAnimation(animation) {
-        const i = this._animations.indexOf(animation);
-
-        if (i >= 0) {
-            this._animations.splice(i, 1);
-        }
+        this._animations.remove(animation);
 
         return this;
     }

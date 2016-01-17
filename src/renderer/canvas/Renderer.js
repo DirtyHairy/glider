@@ -1,6 +1,7 @@
 import Observable from '../../utils/Observable';
 import DependencyTracker from '../../utils/DependencyTracker';
 import ImageLayer from './ImageLayer';
+import AnimationQueue from '../AnimationQueue';
 import * as utils from '../../utils';
 
 export default class Renderer {
@@ -10,9 +11,13 @@ export default class Renderer {
         this._imageUrl = imageUrl;
         this._transformation = transformation;
         this._featureSets = featureSets;
+        this._animations = new AnimationQueue();
         this._imageLayer = new ImageLayer(this._ctx, imageUrl, canvas.width, canvas.height);
         this._dependencyTracker = new DependencyTracker();
         this._renderPending = false;
+        this._destroyed = false;
+        this._forceRedraw = false;
+        this._animationFrameHandle = null;
 
         this.observable = {
             render: new Observable()
@@ -23,14 +28,25 @@ export default class Renderer {
     }
 
     _immediateRender() {
-        this._dependencyTracker.update(this._transformation, () => {
+        if (this._destroyed) {
+            return;
+        }
+
+        const exec = () => {
             this._ctx.save();
             this._ctx.fillStyle = '#FFF';
             this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
             this._setupTransformation();
             this._imageLayer.render();
             this._ctx.restore();
-        });
+            this._forceRedraw = false;
+        };
+
+        if (this._forceRedraw) {
+            exec();
+        } else {
+            this._dependencyTracker.update(this._transformation, exec);
+        }
     }
 
     _setupTransformation() {
@@ -45,11 +61,28 @@ export default class Renderer {
             this._transformation.getTranslateX(),
             -this._transformation.getTranslateY()
         );
-        
+
+    }
+
+    _scheduleAnimations() {
+        if (this._animationFrameHandle) {
+            return;
+        }
+
+        this._animationFrameHandle = requestAnimationFrame((timestamp) => {
+            this._animationFrameHandle = null;
+
+            this._animations.progress(timestamp);
+            this._immediateRender();
+
+            if (this._animations.count() > 0 && !this._destroyed) {
+                this._scheduleAnimations();
+            }
+        });
     }
 
     render() {
-        if (this._renderPending || !this._imageLayer.isReady()) {
+        if (this._renderPending || !this._imageLayer.isReady() || this._destroyed || this._animations.count() > 0) {
             return this;
         }
 
@@ -68,15 +101,21 @@ export default class Renderer {
 
     applyCanvasResize() {
         this._imageLayer.updateCanvasSize(this._canvas.width, this._canvas.height);
+        this._forceRedraw = true;
 
         return this;
     }
 
     addAnimation(animation) {
+        this._animations.add(animation);
+        this._scheduleAnimations();
+
         return this;
     }
 
     removeAnimation(animation) {
+        this._animations.remove(animation);
+
         return this;
     }
 
@@ -100,6 +139,7 @@ export default class Renderer {
     }
 
     destroy() {
+        this._destroyed = true;
         this._imageLayer = utils.destroy(this._imageLayer);
     }
 }
