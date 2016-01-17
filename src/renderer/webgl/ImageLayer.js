@@ -41,7 +41,7 @@ export default class ImageLayer {
     }
 
     _loadImageData() {
-        return loadImage(this._url)
+        return utils.loadImage(this._url)
             .then((image) => {
                     const paddedWidth = Math.pow(2, Math.floor(Math.log(image.width) / Math.log(2)) + 1),
                         paddedHeight = Math.pow(2, Math.floor(Math.log(image.width) / Math.log(2)) + 1),
@@ -175,17 +175,4 @@ export default class ImageLayer {
             this._textureCoordinateBuffer = null;
         }
     }
-}
-
-function loadImage(url) {
-    const image = new Image();
-
-    return new Promise((resolve, reject) => {
-        image.addEventListener('load', () => resolve(image));
-
-        image.addEventListener('error', () =>
-            reject(new Error('image load for ' + url + ' failed')));
-
-        image.src = url;
-    });
 }
