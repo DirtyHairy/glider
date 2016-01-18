@@ -58,6 +58,22 @@ export default class ImageLayer {
                         0, 0, image.width, image.height,
                         0, paddedHeight - image.height, image.width, image.height);
 
+                    // Simulate CLAMP_TO_EDGE for the open ends of the padded texture ---
+                    // otherwise, sampling at the edges will give a frame effect.
+                    for (let i = 0; i < paddedWidth - image.width; i++) {
+                        ctx.drawImage(image,
+                            image.width - 1, 0, 1, image.height,
+                            image.width + i, paddedHeight - image.height, 1, image.height);
+                    }
+
+                    // dito
+                    for (let i = 0; i < paddedHeight - image.height; i++) {
+                        ctx.drawImage(image,
+                            0, 0, image.width, 1,
+                            0, paddedHeight - image.height - i, image.width, 1
+                        );
+                    }
+
                     return canvas;
                 });
     }
@@ -98,6 +114,8 @@ export default class ImageLayer {
         this._texture = Texture.fromImageOrCanvas(this._gl, imageData, TEXTURE_UNIT, {
             magFilter: this._gl.LINEAR,
             minFilter: this._gl.LINEAR_MIPMAP_NEAREST,
+            wrapS: this._gl.CLAMP_TO_EDGE,
+            wrapT: this._gl.CLAMP_TO_EDGE,
             flipY: true
         });
     }

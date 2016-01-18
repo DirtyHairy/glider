@@ -12,7 +12,7 @@ export default class Renderer {
         this._transformation = transformation;
         this._featureSets = featureSets;
         this._animations = new AnimationQueue();
-        this._imageLayer = new ImageLayer(this._ctx, imageUrl, canvas.width, canvas.height);
+        this._imageLayer = new ImageLayer(this._ctx, imageUrl, transformation, canvas.width, canvas.height);
         this._dependencyTracker = new DependencyTracker();
         this._renderPending = false;
         this._destroyed = false;
@@ -33,12 +33,9 @@ export default class Renderer {
         }
 
         const exec = () => {
-            this._ctx.save();
             this._ctx.fillStyle = '#FFF';
             this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
-            this._setupTransformation();
             this._imageLayer.render();
-            this._ctx.restore();
             this._forceRedraw = false;
         };
 
@@ -47,21 +44,6 @@ export default class Renderer {
         } else {
             this._dependencyTracker.update(this._transformation, exec);
         }
-    }
-
-    _setupTransformation() {
-
-        const scale = this._transformation.getScale();
-        this._ctx.translate(
-            this._canvas.width / 2,
-            this._canvas.height / 2
-        );
-        this._ctx.scale(scale, scale);
-        this._ctx.translate(
-            this._transformation.getTranslateX(),
-            -this._transformation.getTranslateY()
-        );
-
     }
 
     _scheduleAnimations() {
