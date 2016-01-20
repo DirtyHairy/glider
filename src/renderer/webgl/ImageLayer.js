@@ -74,6 +74,13 @@ export default class ImageLayer {
                         );
                     }
 
+                    // dito --- the top right corner fully degenerates to the color
+                    // of the top right pixel
+                    let topRightPixel =
+                        ctx.getImageData(image.width - 1, paddedHeight - image.height, 1, 1).data;
+                    ctx.fillStyle = `rgb(${topRightPixel[0]},${topRightPixel[1]},${topRightPixel[2]})`;
+                    ctx.fillRect(image.width, 0, paddedWidth - image.width, paddedHeight - image.height);
+
                     return canvas;
                 });
     }
