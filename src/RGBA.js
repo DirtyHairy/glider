@@ -1,4 +1,6 @@
 export default function RGBA(r, g, b, a) {
+    const colorString = `rgba(${r},${g},${b},${a})`;
+
     this.r = function() {
         return r;
     };
@@ -17,6 +19,10 @@ export default function RGBA(r, g, b, a) {
 
     this.hasAlpha = function() {
         return true;
+    };
+
+    this.toString = function() {
+        return colorString;
     };
 
     Object.freeze(this);

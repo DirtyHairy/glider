@@ -2,6 +2,8 @@ import Observable from '../../utils/Observable';
 import DependencyTracker from '../../utils/DependencyTracker';
 import ImageLayer from './ImageLayer';
 import AnimationQueue from '../AnimationQueue';
+import RenderFeatureSet from './RenderFeatureSet';
+import ListenerGroup from '../../utils/ListenerGroup';
 import * as utils from '../../utils';
 
 export default class Renderer {
@@ -12,12 +14,14 @@ export default class Renderer {
         this._transformation = transformation;
         this._featureSets = featureSets;
         this._animations = new AnimationQueue();
-        this._imageLayer = new ImageLayer(this._ctx, imageUrl, transformation, canvas.width, canvas.height);
+        this._imageLayer = new ImageLayer(this._ctx, imageUrl, transformation, canvas);
         this._dependencyTracker = new DependencyTracker();
         this._renderPending = false;
         this._destroyed = false;
         this._forceRedraw = false;
         this._animationFrameHandle = null;
+        this._renderFeatureSets = new WeakMap();
+        this._listeners = new ListenerGroup();
 
         this.observable = {
             render: new Observable()
@@ -25,6 +29,7 @@ export default class Renderer {
         Observable.delegate(this, this.observable);
 
         this._ctx.save();
+        this._registerFeatureSets();
     }
 
     _immediateRender() {
@@ -36,13 +41,15 @@ export default class Renderer {
             this._ctx.fillStyle = '#FFF';
             this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
             this._imageLayer.render();
+            this._featureSets.forEach((featureSet) => this._renderFeatureSets.get(featureSet).render());
             this._forceRedraw = false;
         };
 
         if (this._forceRedraw) {
             exec();
         } else {
-            this._dependencyTracker.update(this._transformation, exec);
+            this._dependencyTracker.updateAll(
+                [this._transformation, ...this._featureSets.items()], exec);
         }
     }
 
@@ -61,6 +68,22 @@ export default class Renderer {
                 this._scheduleAnimations();
             }
         });
+    }
+
+    _onFeatureSetAdded(featureSet) {
+        this._renderFeatureSets.set(featureSet, new RenderFeatureSet(
+            this._ctx, featureSet, this._transformation, this._canvas));
+    }
+
+    _onFeatureSetRemoved(featureSet) {
+        this._renderFeatureSets.delete(featureSet);
+    }
+
+    _registerFeatureSets() {
+        this._listeners.add(this._featureSets, 'add', this._onFeatureSetAdded.bind(this));
+        this._listeners.add(this._featureSets, 'remove', this._onFeatureSetRemoved.bind(this));
+
+        this._featureSets.forEach((featureSet) => this._onFeatureSetAdded(featureSet));
     }
 
     render() {
@@ -82,7 +105,6 @@ export default class Renderer {
     }
 
     applyCanvasResize() {
-        this._imageLayer.updateCanvasSize(this._canvas.width, this._canvas.height);
         this._forceRedraw = true;
 
         return this;
@@ -123,5 +145,6 @@ export default class Renderer {
     destroy() {
         this._destroyed = true;
         this._imageLayer = utils.destroy(this._imageLayer);
+        this._featureSets.forEach((featureSet) => this._renderFeatureSets.delete(featureSet));
     }
 }

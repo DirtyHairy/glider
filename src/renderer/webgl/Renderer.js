@@ -11,7 +11,9 @@ import AnimationQueue from '../AnimationQueue';
 
 export default class Renderer {
     constructor(canvas, imageUrl, transformation, featureSets) {
-        const gl = canvas.getContext('webgl');
+        const gl = canvas.getContext('webgl', {
+            alpha: false
+        });
 
         this._gl = gl;
         this._canvas = canvas;
