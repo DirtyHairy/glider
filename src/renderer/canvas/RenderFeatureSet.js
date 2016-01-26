@@ -10,15 +10,17 @@ export default class RenderFeatureSet {
         const scale = this._transformation.getScale(),
             dx = this._transformation.getTranslateX(),
             dy = this._transformation.getTranslateY(),
+            dxDiscrete = Math.round(dx * scale),
+            dyDiscrete = Math.round(dy * scale),
             canvasWidth2 = this._canvas.width / 2,
             canvasHeight2 = this._canvas.height / 2;
 
         this._featureSet.forEach((feature) => {
-            const width = feature.getWidth() * scale,
-                originalHeight = feature.getHeight(),
-                height = originalHeight * scale,
-                left = (feature.getLeft() + dx) * scale + canvasWidth2,
-                top = (-feature.getBottom() - originalHeight - dy) * scale + canvasHeight2;
+            const originalHeight = feature.getHeight(),
+                width =     Math.round(feature.getWidth() * scale),
+                height =    Math.round(originalHeight * scale),
+                left =      Math.round(feature.getLeft() * scale + canvasWidth2) + dxDiscrete,
+                top =       Math.round((-feature.getBottom() - originalHeight) * scale + canvasHeight2) - dyDiscrete;
 
             if (!rectangleIntersection(
                 0, 0, this._canvas.width, this._canvas.height,
