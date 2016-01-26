@@ -60,11 +60,11 @@ export default class ImageLayer {
         );
     }
 
-    getWidth() {
+    getImageWidth() {
         return this._image.width;
     }
 
-    getHeight() {
+    getImageHeight() {
         return this._image.height;
     }
 
