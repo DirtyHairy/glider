@@ -46,8 +46,7 @@ module.exports = function(env) {
 
         plugins: [
             new NotifierPlugin({
-                title: 'Glider',
-                alwaysNotify: true
+                title: 'Glider'
             })
         ]
     }

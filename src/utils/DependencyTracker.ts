@@ -1,21 +1,17 @@
 import {generationSymbol} from './DependencyProvider';
 
-export default class DependencyTracker {
-    constructor() {
-        this._map = new WeakMap();
-    }
-
-    isCurrent(target) {
+class DependencyTracker {
+    isCurrent(target: any): boolean {
         return this._map.has(target) && (this._map.get(target) === target[generationSymbol]);
     }
 
-    setCurrent(target) {
+    setCurrent(target: any): this {
         this._map.set(target, target[generationSymbol]);
 
         return this;
     }
 
-    setAllCurrent(targets) {
+    setAllCurrent(targets: Array<any>): this {
         const nTargets = targets.length;
 
         for (let i = 0; i < nTargets; i++) {
@@ -25,7 +21,7 @@ export default class DependencyTracker {
         return this;
     }
 
-    update(target, cb) {
+    update(target: any, cb: () => void): this {
         if (this.isCurrent(target)) {
             return this;
         }
@@ -37,7 +33,7 @@ export default class DependencyTracker {
         return this;
     }
 
-    allCurrent(targets) {
+    allCurrent(targets: Array<any>): boolean {
         const nTargets = targets.length;
         let isCurrent = true;
 
@@ -52,7 +48,7 @@ export default class DependencyTracker {
         return isCurrent;
     }
 
-    updateAll(targets, cb) {
+    updateAll(targets: Array<any>, cb: () => void) {
         if (this.allCurrent(targets)) {
             return this;
         }
@@ -63,4 +59,8 @@ export default class DependencyTracker {
 
         return this;
     }
+
+    private _map = new WeakMap<Object, number>();
 }
+
+export default DependencyTracker;

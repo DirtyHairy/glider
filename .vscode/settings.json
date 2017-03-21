@@ -1,4 +1,6 @@
 {
     "jshint.enable": false,
-    "tslint.enable": true
+    "tslint.enable": true,
+    "files.insertFinalNewline": true,
+    "files.trimTrailingWhitespace": true
 }
