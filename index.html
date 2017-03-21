@@ -8,6 +8,7 @@
             margin: 0;
         }
     </style>
+    <script src="node_modules/core-js/client/shim.min.js"></script>
 </head>
 
 <body>
@@ -162,7 +163,7 @@
 
     script.async = true;
     script.addEventListener('load', bootstrap);
-    script.src = queryParams.hasOwnProperty('dev') ? 'glider.js' : 'glider.min.js';
+    script.src = queryParams.hasOwnProperty('dev') ? 'build/glider.js' : 'build/glider.min.js';
 
     document.head.appendChild(script);
 })();
