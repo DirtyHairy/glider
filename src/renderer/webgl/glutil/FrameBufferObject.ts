@@ -1,11 +1,12 @@
+import Texture from './Texture';
+
 export default class FrameBufferObject {
-    constructor(gl) {
-        this._gl = gl;
-        this._fbo = gl.createFramebuffer();
+    constructor(public _gl: WebGLRenderingContext) {
+        this._fbo = _gl.createFramebuffer();
         this._boundContext = new BoundContext(this);
     }
 
-    bind(cb) {
+    bind(cb: (context: BoundContext) => void): this {
         const gl = this._gl;
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this._fbo);
@@ -17,7 +18,7 @@ export default class FrameBufferObject {
         return this;
     }
 
-    destroy() {
+    destroy(): void {
         const gl = this._gl;
 
         if (this._fbo) {
@@ -25,14 +26,16 @@ export default class FrameBufferObject {
             this._fbo = null;
         }
     }
+
+    private _fbo: WebGLFramebuffer;
+    private _boundContext: BoundContext;
 }
 
+// tslint:disable-next-line:max-classes-per-file
 class BoundContext {
-    constructor(fbo) {
-        this._fbo = fbo;
-    }
+    constructor(private _fbo: FrameBufferObject) { }
 
-    attachColorTexture(texture, textureUnit) {
+    attachColorTexture(texture: Texture, textureUnit: number): this {
         const gl = this._fbo._gl;
 
         texture.bind(textureUnit);
@@ -42,7 +45,7 @@ class BoundContext {
         return this;
     }
 
-    validate() {
+    validate(): this {
         const gl = this._fbo._gl,
             status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
 
