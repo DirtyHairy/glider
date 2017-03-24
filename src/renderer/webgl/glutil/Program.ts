@@ -1,15 +1,16 @@
 export default class Program {
-    constructor(gl, vertexShaderSource, fragmentShaderSource) {
-        this._gl = gl;
-        this._attributeLocations = {};
-        this._uniformLocations = {};
+    constructor(
+        public _gl: WebGLRenderingContext,
+        vertexShaderSource: string,
+        fragmentShaderSource: string
+    ) {
         this._boundContext = new BoundContext(this);
-        this._vertexShader = compileShader(gl, vertexShaderSource, gl.VERTEX_SHADER);
-        this._fragmentShader = compileShader(gl, fragmentShaderSource, gl.FRAGMENT_SHADER);
-        this._program = linkProgram(gl, this._vertexShader, this._fragmentShader);
+        this._vertexShader = compileShader(_gl, vertexShaderSource, _gl.VERTEX_SHADER);
+        this._fragmentShader = compileShader(_gl, fragmentShaderSource, _gl.FRAGMENT_SHADER);
+        this._program = linkProgram(_gl, this._vertexShader, this._fragmentShader);
     }
 
-    _getAttribLocation(name) {
+    _getAttribLocation(name: string): number {
         if (this._attributeLocations.hasOwnProperty(name)) {
             return this._attributeLocations[name];
         }
@@ -24,7 +25,7 @@ export default class Program {
         return location;
     }
 
-    _getUniformLocation(name) {
+    _getUniformLocation(name: string): WebGLUniformLocation {
         if (this._uniformLocations.hasOwnProperty(name)) {
             return this._uniformLocations[name];
         }
@@ -39,7 +40,7 @@ export default class Program {
         return location;
     }
 
-    use(cb) {
+    use(cb: (context: BoundContext) => void) {
         this._gl.useProgram(this._program);
 
         if (cb) {
@@ -47,7 +48,7 @@ export default class Program {
         }
     }
 
-    destroy() {
+    destroy(): void {
         const gl = this._gl;
 
         if (this._program) {
@@ -65,9 +66,16 @@ export default class Program {
             this._fragmentShader = null;
         }
     }
+
+    private _attributeLocations: {[key: string]: number} = {};
+    private _uniformLocations: {[key: string]: WebGLUniformLocation} = {};
+    private _boundContext: BoundContext;
+    private _vertexShader: WebGLShader;
+    private _fragmentShader: WebGLShader;
+    private _program: WebGLProgram;
 }
 
-function compileShader(gl, source, type) {
+function compileShader(gl: WebGLRenderingContext, source: string, type: number): WebGLShader {
     const shader = gl.createShader(type);
 
     gl.shaderSource(shader, source);
@@ -80,7 +88,7 @@ function compileShader(gl, source, type) {
     return shader;
 }
 
-function linkProgram(gl, vertexShader, fragmentShader) {
+function linkProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader): WebGLProgram {
     const program = gl.createProgram();
 
     gl.attachShader(program, vertexShader);
@@ -94,35 +102,48 @@ function linkProgram(gl, vertexShader, fragmentShader) {
     return program;
 }
 
+// tslint:disable-next-line:max-classes-per-file
 class BoundContext {
-    constructor(program) {
-        this._program = program;
-    }
+    constructor(private _program: Program) { }
 
-    vertexAttribPointer(name, size, type, normalized, stride, offset) {
+    vertexAttribPointer(name: string, size: number, type: number, normalized = false, stride = 0, offset = 0): this {
         this._program._gl.vertexAttribPointer(
                 this._program._getAttribLocation(name),
                 size,
                 type,
-                !!normalized,
-                stride || 0,
-                offset || 0
+                normalized,
+                stride,
+                offset
         );
 
         return this;
     }
 
-    enableVertexAttribArray(name) {
+    enableVertexAttribArray(name: string): this {
         this._program._gl.enableVertexAttribArray(this._program._getAttribLocation(name));
 
         return this;
     }
+
+    uniformMatrix2fv: (name: string, value: Float32Array, transpose: boolean) => void;
+    uniformMatrix3fv: (name: string, value: Float32Array, transpose: boolean) => void;
+    uniformMatrix4fv: (name: string, value: Float32Array, transpose: boolean) => void;
+
+    uniform1i: (name: string, value1: number) => void;
+    uniform2i: (name: string, value1: number, value2: number) => void;
+    uniform3i: (name: string, value1: number, value2: number, value3: number) => void;
+    uniform4i: (name: string, value1: number, value2: number, value3: number, value4: number) => void;
+
+    uniform1f: (name: string, value1: number) => void;
+    uniform2f: (name: string, value1: number, value2: number) => void;
+    uniform3f: (name: string, value1: number, value2: number, value3: number) => void;
+    uniform4f: (name: string, value1: number, value2: number, value3: number, value4: number) => void;
 }
 
 [2, 3, 4].forEach((dim) => {
     const method = `uniformMatrix${dim}fv`;
 
-    BoundContext.prototype[method] = new Function('name', 'value', 'transpose', // jshint ignore:line
+    (BoundContext as any).prototype[method] = new Function('name', 'value', 'transpose',
         `this._program._gl.${method}(this._program._getUniformLocation(name), !!transpose, value);`
     );
 });
@@ -141,6 +162,6 @@ class BoundContext {
 
         args.push(`this._program._gl.${method}( ${callArgs.join(',')} );`);
 
-        BoundContext.prototype[method] = new Function(...args);//jshint ignore:line
+        (BoundContext as any).prototype[method] = new Function(...args);
     });
 });
