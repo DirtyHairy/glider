@@ -1,17 +1,50 @@
 export default class Texture {
-    constructor(gl) {
-        const texture = gl.createTexture();
-
-        this._gl = gl;
-        this._texture = texture;
-        this._format = gl.RGB;
-        this._texelFormat = gl.UNSIGNED_BYTE;
-        this._textureUnits = getTextureUnits(gl);
+    constructor(public _gl: WebGLRenderingContext) {
+        this._texture = _gl.createTexture();
+        this._format = _gl.RGB;
+        this._texelFormat = _gl.UNSIGNED_BYTE;
+        this._textureUnits = getTextureUnits(_gl);
         this._mipmap = false;
         this._boundContext = new BoundContext(this);
     }
 
-    bind(textureUnit, cb) {
+    static fromImageOrCanvas(
+        gl: WebGLRenderingContext,
+        imageData: HTMLImageElement | HTMLCanvasElement,
+        textureUnit: number,
+        options: TextureOptions
+    ) {
+        const texture = new Texture(gl);
+
+        texture.bind(textureUnit, (ctx) => {
+            ctx
+                .reconfigure(options)
+                .loadImageOrCanvas(imageData);
+        });
+
+        return texture;
+    }
+
+    static fromPixelData(
+        gl: WebGLRenderingContext,
+        width: number,
+        heigth: number,
+        pixelData: ArrayBufferView,
+        textureUnit: number,
+        options: TextureOptions
+    ) {
+        const texture = new Texture(gl);
+
+        texture.bind(textureUnit, (ctx) => {
+            ctx
+                .reconfigure(options)
+                .loadPixelData(width, heigth, pixelData);
+        });
+
+        return texture;
+    }
+
+    bind(textureUnit: number, cb?: (context: BoundContext) => void): this {
         const gl = this._gl;
 
         if (typeof(textureUnit) !== 'undefined') {
@@ -27,11 +60,11 @@ export default class Texture {
         return this;
     }
 
-    getTextureObject() {
+    getTextureObject(): WebGLTexture {
         return this._texture;
     }
 
-    destroy() {
+    destroy(): void {
         const gl = this._gl;
 
         if (this._texture) {
@@ -40,32 +73,15 @@ export default class Texture {
         }
     }
 
-    static fromImageOrCanvas(gl, imageData, textureUnit, options) {
-        const texture = new Texture(gl);
-
-        texture.bind(textureUnit, (ctx) => {
-            ctx
-                .reconfigure(options)
-                .loadImageOrCanvas(imageData);
-        });
-
-        return texture;
-    }
-
-    static fromPixelData(gl, width, heigth, pixelData, textureUnit, options) {
-        const texture = new Texture(gl);
-
-        texture.bind(textureUnit, (ctx) => {
-            ctx
-                .reconfigure(options)
-                .loadPixelData(width, heigth, pixelData);
-        });
-
-        return texture;
-    }
+    public _texture: WebGLTexture;
+    public _format: number;
+    public _texelFormat: number;
+    public _textureUnits: Array<number>;
+    public _mipmap: boolean;
+    public _boundContext: BoundContext;
 }
 
-function getTextureUnits(gl) {
+function getTextureUnits(gl: WebGLRenderingContext): Array<number> {
     const textureUnits = [];
     let i = 0;
 
@@ -76,18 +92,27 @@ function getTextureUnits(gl) {
             break;
         }
 
-        textureUnits.push(gl[name]);
+        textureUnits.push((gl as any)[name] as number);
     }
 
     return textureUnits;
 }
 
-class BoundContext {
-    constructor(texture) {
-        this._texture = texture;
-    }
+export interface TextureOptions {
+    magFilter?: number;
+    minFilter?: number;
+    wrapS?: number;
+    wrapT?: number;
+    flipY?: number;
+    texelFormat?: number;
+    format?: number;
+}
 
-    reconfigure(options = {}) {
+// tslint:disable-next-line:max-classes-per-file
+export class BoundContext {
+    constructor(private _texture: Texture) { }
+
+    reconfigure(options: TextureOptions = {}) {
         const gl = this._texture._gl;
 
         if (options.hasOwnProperty('magFilter')) {
@@ -122,7 +147,7 @@ class BoundContext {
         return this;
     }
 
-    loadImageOrCanvas(imageData) {
+    loadImageOrCanvas(imageData: HTMLImageElement | HTMLCanvasElement): this {
         const gl = this._texture._gl;
 
         gl.texImage2D(gl.TEXTURE_2D, 0, this._texture._format, this._texture._format,
@@ -135,7 +160,7 @@ class BoundContext {
         return this;
     }
 
-    loadPixelData(width, height, pixelData) {
+    loadPixelData(width: number, height: number, pixelData: ArrayBufferView): this {
         const gl = this._texture._gl;
 
         gl.texImage2D(gl.TEXTURE_2D, 0, this._texture._format, width, height,
