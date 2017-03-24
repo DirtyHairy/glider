@@ -1,16 +1,13 @@
 import DependencyProvider from '../../utils/DependencyProvider';
-import * as mat4 from 'gl-matrix/src/gl-matrix/mat4';
+import mat4 = require('gl-matrix/src/gl-matrix/mat4');
 
 export default class ProjectionMatrix {
-    constructor(width, height) {
-        this._width = width;
-        this._height = height;
-        this._recalculationRequired = true;
-        this._dependencyProvider = new DependencyProvider(this);
-        this._matrix = mat4.create();
-    }
+    constructor(
+        private _width: number,
+        private _height: number
+    ) {}
 
-    setWidth(width) {
+    setWidth(width: number): this {
         if (width === this._width) {
             return this;
         }
@@ -22,7 +19,7 @@ export default class ProjectionMatrix {
         return this;
     }
 
-    setHeight(height) {
+    setHeight(height: number): this {
         if (height === this._height) {
             return this;
         }
@@ -34,16 +31,20 @@ export default class ProjectionMatrix {
         return this;
     }
 
-    getMatrix() {
+    getMatrix(): mat4 {
         if (this._recalculationRequired) {
             mat4.identity(this._matrix);
 
-            mat4.ortho(this._matrix, -this._width/2, this._width/2,
-                -this._height/2, this._height/2, 0, 1);
+            mat4.ortho(this._matrix, -this._width / 2, this._width / 2,
+                -this._height / 2, this._height / 2, 0, 1);
 
             this._recalculationRequired = false;
         }
 
         return this._matrix;
     }
+
+    private _recalculationRequired = true;
+    private _dependencyProvider = new DependencyProvider(this);
+    private _matrix = mat4.create();
 }
