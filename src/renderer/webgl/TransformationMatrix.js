@@ -1,6 +1,6 @@
 import DependencyProvider from '../../utils/DependencyProvider';
 import DependencyTracker from '../../utils/DependencyTracker';
-import * as mat4 from 'gl-matrix-mat4';
+import * as mat4 from 'gl-matrix/src/gl-matrix/mat4';
 import * as utils from '../../utils';
 
 export default class TransformationMatrix {

@@ -1,5 +1,5 @@
 import DependencyProvider from '../../utils/DependencyProvider';
-import * as mat4 from 'gl-matrix-mat4';
+import * as mat4 from 'gl-matrix/src/gl-matrix/mat4';
 
 export default class ProjectionMatrix {
     constructor(width, height) {
