@@ -1,13 +1,11 @@
 export default class Throttle {
-    constructor(cb, interval) {
-        this._cb = cb;
-        this._interval = interval;
-        this._args = null;
-        this._lastCallr = Date.now();
-        this._timeoutHandle = null;
-    }
 
-    call(...args) {
+    constructor(
+        private _cb: (...args: Array<any>) => void,
+        private _interval: number)
+     {}
+
+    call(...args: Array<any>): this {
         if (this._timeoutHandle !== null) {
             this._args = args;
             return;
@@ -30,7 +28,7 @@ export default class Throttle {
         return this;
     }
 
-    setInterval(interval) {
+    setInterval(interval: number): this {
         if (interval === this._interval) {
             return this;
         }
@@ -45,15 +43,21 @@ export default class Throttle {
         return this;
     }
 
-    cancel() {
+    cancel(): this {
         if (this._timeoutHandle) {
             clearTimeout(this._timeoutHandle);
             this._timeoutHandle = null;
         }
+
+        return this;
     }
 
-    destroy() {
+    destroy(): void {
         this.cancel();
         this._cb = null;
     }
+
+    private _lastCall = 0;
+    private _args: Array<any> = [];
+    private _timeoutHandle: any = null;
 }

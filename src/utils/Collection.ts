@@ -1,21 +1,13 @@
-import Observable from './Observable';
+import {default as Observable, Listener, ObservableDelegate} from './Observable';
 import DependencyProvider from './DependencyProvider';
 
-export default class Collection {
+export default class Collection<T> implements ObservableDelegate {
+
     constructor() {
-        this._items = [];
-        this._itemSet = new WeakSet();
-        this._dependencyProvider = new DependencyProvider(this);
-
-        this.observable = {
-            add: new Observable(),
-            remove: new Observable()
-        };
-
         Observable.delegate(this, this.observable);
     }
 
-    add(item) {
+    add(item: T): this {
         if (!this._itemSet.has(item)) {
             this._items.push(item);
             this._itemSet.add(item);
@@ -26,7 +18,7 @@ export default class Collection {
         return this;
     }
 
-    remove(item) {
+    remove(item: T): boolean {
         if (this._itemSet.has(item)) {
             this._items.splice(this._items.indexOf(item), 1);
             this._itemSet.delete(item);
@@ -39,25 +31,25 @@ export default class Collection {
         return false;
     }
 
-    contains(item) {
+    contains(item: T): boolean {
         return this._itemSet.has(item);
     }
 
-    get(i) {
+    get(i: number): T {
         return this._items[i];
     }
 
-    count() {
+    count(): number {
         return this._items.length;
     }
 
-    forEach(cb, scope) {
+    forEach<U>(cb: (x: T) => void, scope: U): this {
         this._items.forEach(cb, scope);
 
         return this;
     }
 
-    find(predicate) {
+    find(predicate: (x: T) => boolean): T {
         const len = this._items.length;
 
         for (let i = 0; i < len; i++) {
@@ -67,11 +59,23 @@ export default class Collection {
         }
     }
 
-    items() {
+    items(): Array<T> {
         return this._items;
     }
 
     destroy() {
         this._items = [];
     }
+
+    addListener?: <U>(observable: string, listener: Listener<U>) => void;
+    removeListener?: <U>(observable: string, listener: Listener<U>) => void;
+
+    observable = {
+        add: new Observable(),
+        remove: new Observable()
+    };
+
+    private _items: Array<T> = [];
+    private _itemSet = new WeakSet<T>();
+    private _dependencyProvider = new DependencyProvider(this);
 }
