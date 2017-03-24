@@ -3,7 +3,7 @@ export interface Listener<T> {
 }
 
 export interface ObservableDelegate {
-    addListener?: <T>(observable: string, listener: Listener<T>) => void;
+    addListener?: <T>(observable: string, listener: Listener<T>) => Listener<T>;
     removeListener?: <T>(observable: string, listener: Listener<T>) => void;
 }
 
@@ -14,15 +14,15 @@ export interface ObservableCollection {
 class Observable<T> {
 
     static delegate(instance: ObservableDelegate, collection: ObservableCollection) {
-        instance.addListener = <T>(observable: string, listener: Listener<T>) => {
+        instance.addListener = <T>(observable: string, listener: Listener<T>): Listener<T> => {
             if (!collection[observable]) {
                 throw new Error('no observable' + observable);
             }
 
-            collection[observable].addListener(listener);
+            return collection[observable].addListener(listener);
         };
 
-        instance.removeListener = <T>(observable: string, listener: Listener<T>) => {
+        instance.removeListener = <T>(observable: string, listener: Listener<T>): void => {
             if (!collection[observable]) {
                 throw new Error('no observable ' + observable);
             }

@@ -1,9 +1,12 @@
-export default class ListenerGroup {
-    constructor() {
-        this._map = new WeakMap();
-    }
+import {Listener, ObservableDelegate} from './Observable';
 
-    add(target, event, listener) {
+export interface Group {
+    [event: string]: Listener<any>;
+}
+
+export default class ListenerGroup {
+
+    add<T>(target: ObservableDelegate, event: string, listener: Listener<T>): this {
         let group;
 
         if (!this._map.has(target)) {
@@ -19,7 +22,7 @@ export default class ListenerGroup {
         return this;
     }
 
-    remove(target, event) {
+    remove(target: ObservableDelegate, event: string): this {
         if (!this._map.has(target)) {
             return this;
         }
@@ -38,7 +41,7 @@ export default class ListenerGroup {
         return this;
     }
 
-    removeTarget(target) {
+    removeTarget(target: ObservableDelegate): this {
         if (!this._map.has(target)) {
             return this;
         }
@@ -53,4 +56,6 @@ export default class ListenerGroup {
 
         return this;
     }
+
+    private _map = new WeakMap<ObservableDelegate, Group>();
 }
