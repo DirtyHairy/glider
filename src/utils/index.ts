@@ -1,4 +1,4 @@
-export function clamp(x, min, max) {
+export function clamp(x: number, min: number, max: number): number {
     if (x < min) {
         return min;
     }
@@ -10,7 +10,11 @@ export function clamp(x, min, max) {
     return x;
 }
 
-export function destroy(victim) {
+export interface Destroyable {
+    destroy?: () => void;
+}
+
+export function destroy(victim: Destroyable): null {
     if (victim && victim.destroy) {
         victim.destroy();
     }
@@ -18,7 +22,7 @@ export function destroy(victim) {
     return null;
 }
 
-export function loadImage(url) {
+export function loadImage(url: string) {
     const image = new Image();
 
     return new Promise((resolve, reject) => {
