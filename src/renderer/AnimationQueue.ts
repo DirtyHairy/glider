@@ -1,7 +1,9 @@
 import Collection from '../utils/Collection';
+import Animation from '../animation/AnimationInterface';
 
-export default class AnimationQueue extends Collection {
-    progress(timestamp) {
+export default class AnimationQueue extends Collection<Animation> {
+
+    progress(timestamp: number) {
         const animations = this.items();
 
         let len = animations.length,
@@ -18,4 +20,5 @@ export default class AnimationQueue extends Collection {
             }
         }
     }
+
 }
