@@ -3,11 +3,16 @@ import RenderFeatureSet from './RenderFeatureSet';
 import AbstractRenderer from '../AbstractRenderer';
 
 export default class Renderer extends AbstractRenderer {
-    _preInit(canvas) {
-        this._ctx = canvas.getContext('2d');
+    init() {
+        this._ctx = this._canvas.getContext('2d');
         this._ctx.save();
 
         this._forceRedraw = true;
+
+        this._pickingManager = this._createPickingManager();
+        this._imageLayer = this._createImageLayer(this._imageUrl);
+
+        return this;
     }
 
     _createImageLayer(imageUrl) {

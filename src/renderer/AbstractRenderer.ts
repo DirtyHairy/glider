@@ -1,31 +1,26 @@
+import Animation from '../animation/AnimationInterface';
 import AnimationQueue from './AnimationQueue';
+import Collection from '../utils/Collection';
 import DependencyTracker from '../utils/DependencyTracker';
+import FeatureSet from '../FeatureSet';
 import ListenerGroup from '../utils/ListenerGroup';
-import Observable from '../utils/Observable';
+import ImageLayer from './ImageLayer';
+import {default as Observable, ObservableCollection} from '../utils/Observable';
+import PickingManager from './PickingManager';
+import Renderer from './Renderer';
+import Transformation from '../Transformation';
 import * as utils from '../utils';
 
-export default class AbstractRenderer {
-    constructor(canvas, imageUrl, transformation, featureSets) {
-        this._preInit(canvas, imageUrl, transformation, featureSets);
+abstract class AbstractRenderer<RenderFeatureSetT extends utils.Destroyable> implements Renderer {
+    constructor(
+        protected _canvas: HTMLCanvasElement,
+        protected _imageUrl: string,
+        protected _transformation: Transformation,
+        protected _featureSets: Collection<FeatureSet>
+    ) {
+        // this._preInit(canvas, imageUrl, transformation, featureSets);
 
-        this._canvas = canvas;
-        this._transformation = transformation;
-        this._animations = new AnimationQueue();
-        this._animationFrameHandle = null;
-        this._dependencyTracker = new DependencyTracker();
-        this._listeners = new ListenerGroup();
-        this._featureSets = featureSets;
-        this._renderFeatureSets = new WeakMap();
-        this._renderPending = false;
-        this._destroyed = false;
-
-        this.observable = {
-            render: new Observable()
-        };
         Observable.delegate(this, this.observable);
-
-        this._pickingManager = this._createPickingManager();
-        this._imageLayer = this._createImageLayer(imageUrl);
 
         this._registerFeatureSets();
     }
@@ -57,11 +52,11 @@ export default class AbstractRenderer {
         });
     }
 
-    _onFeatureSetAdded(featureSet) {
+    _onFeatureSetAdded(featureSet: FeatureSet): void {
         this._renderFeatureSets.set(featureSet, this._createRenderFeatureSet(featureSet));
     }
 
-    _onFeatureSetRemoved(featureSet) {
+    _onFeatureSetRemoved(featureSet: FeatureSet) {
         this._renderFeatureSets.get(featureSet).destroy();
         this._renderFeatureSets.delete(featureSet);
     }
@@ -96,28 +91,28 @@ export default class AbstractRenderer {
         return this;
     }
 
-    addAnimation(animation) {
+    addAnimation(animation: Animation): this {
         this._animations.add(animation);
         this._scheduleAnimations();
 
         return this;
     }
 
-    removeAnimation(animation) {
+    removeAnimation(animation: Animation): this {
         this._animations.remove(animation);
 
         return this;
     }
 
-    ready() {
+    ready(): Promise<any> {
         return this._imageLayer.ready();
     }
 
-    getPickingProvider() {
+    getPickingProvider(): PickingManager {
         return this._pickingManager;
     }
 
-    destroy() {
+    destroy(): void {
         this._imageLayer = utils.destroy(this._imageLayer);
         this._pickingManager = utils.destroy(this._pickingManager);
 
@@ -139,30 +134,33 @@ export default class AbstractRenderer {
         this._destroyed = true;
     }
 
-    getImageWidth() {
+    getImageWidth(): number {
         return this._imageLayer.getImageWidth();
     }
 
-    getImageHeight() {
+    getImageHeight(): number {
         return this._imageLayer.getImageHeight();
     }
 
-    _createImageLayer(imageUrl) { //jshint ignore: line
-        throw new Error('not implemented');
-    }
+    abstract _renderImplementation(): void;
 
-    _createPickingManager() {
-        throw new Error('not implemented');
-    }
+    abstract _createRenderFeatureSet(featureSet: FeatureSet): RenderFeatureSetT;
 
-    _renderImplementation() {
-        throw new Error('not implemented');
-    }
+    abstract init(): this;
 
-    _createRenderFeatureSet(featureSet) { // jshint ignore: line
-        throw new Error('not implemented');
-    }
+    public observable: ObservableCollection = {
+        render: new Observable()
+    };
 
-    _preInit() {
-    }
+    protected _animations: AnimationQueue = new AnimationQueue();
+    protected _animationFrameHandle: number = null;
+    protected _dependencyTracker: DependencyTracker = new DependencyTracker();
+    protected _listeners: ListenerGroup = new ListenerGroup();
+    protected _renderFeatureSets: WeakMap<FeatureSet, RenderFeatureSetT> = new WeakMap();
+    protected _renderPending: boolean = false;
+    protected _destroyed: boolean = false;
+    protected _pickingManager: PickingManager;
+    protected _imageLayer: ImageLayer;
 }
+
+export default AbstractRenderer;

@@ -43,7 +43,7 @@ export default class Collection<T> implements ObservableDelegate {
         return this._items.length;
     }
 
-    forEach<U>(cb: (x: T) => void, scope: U): this {
+    forEach<U>(cb: (x: T) => void, scope?: U): this {
         this._items.forEach(cb, scope);
 
         return this;

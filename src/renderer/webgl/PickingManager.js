@@ -9,8 +9,8 @@ import PickingBuffer from './PickingBuffer';
 const TEXTURE_UNIT = 1;
 
 export default class PickingManager {
-    constructor(gl, featureSets, glFeatureSets, transformationMatrix, projectionMatrix, width, height) {
-        this._gl = gl;
+    constructor(featureSets, glFeatureSets, transformationMatrix, projectionMatrix, width, height) {
+        this._gl = null;
         this._dependencyTracker = new DependencyTracker();
         this._transformationMatrix = transformationMatrix;
         this._projectionMatrix = projectionMatrix;
@@ -21,12 +21,19 @@ export default class PickingManager {
         this._width = width;
         this._height = height;
         this._forceRedraw = true;
-        this._pickingBuffer = new PickingBuffer(400, width, height, gl);
+        this._pickingBuffer = null;
         this._pickingBufferMiss = 0;
         this._pickingBufferThreshold = 3;
+    }
+
+    init(gl) {
+        this._gl = gl;
+        this._pickingBuffer = new PickingBuffer(400, this._width, this._height, gl);
 
         this._setupFramebuffer();
         this._registerFeatureSets();
+
+        return this;
     }
 
     _setupFramebuffer() {

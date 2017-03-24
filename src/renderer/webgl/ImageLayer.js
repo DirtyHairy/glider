@@ -7,13 +7,13 @@ import * as utils from '../../utils';
 const TEXTURE_UNIT = 0;
 
 export default class ImageLayer {
-    constructor(url, gl, projectionMatrix, transformationMatrix) {
+    constructor(url, projectionMatrix, transformationMatrix) {
+        this._gl = null;
         this._url = url;
-        this._gl = gl;
         this._projectionMatrix = projectionMatrix;
         this._transformationMatrix = transformationMatrix;
         this._dependencyTracker = new DependencyTracker();
-        this._program = new Program(gl, shader.vsh.imagelayer, shader.fsh.imagelayer);
+        this._program = null;
 
         this._imageHeight = 0;
         this._imageWidth = 0;
@@ -25,12 +25,14 @@ export default class ImageLayer {
         this._texture = null;
 
         this._isReady = false;
-
-        this._readyPromise = this._init();
+        this._readyPromise = null;
     }
 
-    _init() {
-        return this._loadImageData()
+    init(gl) {
+        this._gl = gl;
+        this._program = new Program(gl, shader.vsh.imagelayer, shader.fsh.imagelayer);
+
+        this._readyPromise = this._loadImageData()
             .then((imageData) => {
                 this._createTexture(imageData);
                 this._createVertexBuffer();
@@ -38,6 +40,8 @@ export default class ImageLayer {
 
                 this._isReady = true;
             });
+
+        return this;
     }
 
     _loadImageData() {

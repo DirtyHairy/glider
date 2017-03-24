@@ -1,7 +1,10 @@
 import TrackingCollection from './utils/TrackingCollection';
 import Observable from './utils/Observable';
 
-export default class FeatureSet<T> extends TrackingCollection<T> {
+export interface Feature {
+}
+
+export default class FeatureSet extends TrackingCollection<Feature> {
     constructor() {
         super();
 
@@ -10,19 +13,19 @@ export default class FeatureSet<T> extends TrackingCollection<T> {
         this.observable.click = new Observable();
     }
 
-    _notifyPointerEnter(feature: T): void {
+    _notifyPointerEnter(feature: Feature): void {
         if (this.contains(feature)) {
             this.observable.pointerEnter.fire(feature);
         }
     }
 
-    _notifyPointerLeave(feature: T): void {
+    _notifyPointerLeave(feature: Feature): void {
         if (this.contains(feature)) {
             this.observable.pointerLeave.fire(feature);
         }
     }
 
-    _notifyClick(feature: T): void {
+    _notifyClick(feature: Feature) {
         if (this.contains(feature)) {
             this.observable.click.fire(feature);
         }

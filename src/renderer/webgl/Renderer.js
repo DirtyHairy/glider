@@ -7,8 +7,8 @@ import * as utils from '../../utils';
 import AbstractRenderer from '../AbstractRenderer';
 
 export default class Renderer extends AbstractRenderer {
-    _preInit(canvas, imageUrl, transformation) {
-        const gl = canvas.getContext('webgl', {
+    init() {
+        const gl = this._canvas.getContext('webgl', {
             alpha: false
         });
 
@@ -16,17 +16,22 @@ export default class Renderer extends AbstractRenderer {
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         this._gl = gl;
-        this._projectionMatrix = new ProjectionMatrix(canvas.width, canvas.heigth);
-        this._transformationMatrix = new TransformationMatrix(transformation);
+        this._projectionMatrix = new ProjectionMatrix(this._canvas.width, this._canvas.heigth);
+        this._transformationMatrix = new TransformationMatrix(this._transformation);
+
+        this._pickingManager = this._createPickingManager().init(this._gl);
+        this._imageLayer = this._createImageLayer(this._imageUrl).init(this._gl);
+
+        return this;
     }
 
     _createImageLayer(imageUrl) {
-        return new ImageLayer(imageUrl, this._gl, this._projectionMatrix, this._transformationMatrix);
+        return new ImageLayer(imageUrl, this._projectionMatrix, this._transformationMatrix);
     }
 
     _createPickingManager() {
         return new PickingManager(
-            this._gl, this._featureSets, this._renderFeatureSets,
+            this._featureSets, this._renderFeatureSets,
             this._transformationMatrix, this._projectionMatrix,
             this._canvas.width, this._canvas.height
         );
