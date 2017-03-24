@@ -22,49 +22,6 @@ abstract class AbstractRenderer<RenderFeatureSetT extends utils.Destroyable> imp
         this._registerFeatureSets();
     }
 
-    _immediateRender(): void {
-        if (this._destroyed) {
-            return;
-        }
-
-        if (this._renderImplementation()) {
-            this.observable.render.fire();
-        }
-    }
-
-    _scheduleAnimations(): void {
-        if (this._animationFrameHandle !== null) {
-            return;
-        }
-
-        this._animationFrameHandle = requestAnimationFrame((timestamp) => {
-            this._animationFrameHandle = null;
-
-            this._animations.progress(timestamp);
-            this._immediateRender();
-
-            if (this._animations.count() > 0 && ! this._destroyed) {
-                this._scheduleAnimations();
-            }
-        });
-    }
-
-    _onFeatureSetAdded(featureSet: FeatureSet): void {
-        this._renderFeatureSets.set(featureSet, this._createRenderFeatureSet(featureSet));
-    }
-
-    _onFeatureSetRemoved(featureSet: FeatureSet): void {
-        this._renderFeatureSets.get(featureSet).destroy();
-        this._renderFeatureSets.delete(featureSet);
-    }
-
-    _registerFeatureSets(): void {
-        this._listeners.add(this._featureSets, 'add', this._onFeatureSetAdded.bind(this));
-        this._listeners.add(this._featureSets, 'remove', this._onFeatureSetRemoved.bind(this));
-
-        this._featureSets.forEach(this._onFeatureSetAdded.bind(this));
-    }
-
     render(): this {
         if (!this._imageLayer.isReady() || this._renderPending || this._animations.count() > 0 || this._destroyed) {
             return this;
@@ -139,11 +96,54 @@ abstract class AbstractRenderer<RenderFeatureSetT extends utils.Destroyable> imp
         return this._imageLayer.getImageHeight();
     }
 
-    abstract _renderImplementation(): void;
+    public abstract init(): this;
 
-    abstract _createRenderFeatureSet(featureSet: FeatureSet): RenderFeatureSetT;
+    protected abstract _renderImplementation(): void;
 
-    abstract init(): this;
+    protected abstract _createRenderFeatureSet(featureSet: FeatureSet): RenderFeatureSetT;
+
+    private _immediateRender(): void {
+        if (this._destroyed) {
+            return;
+        }
+
+        if (this._renderImplementation()) {
+            this.observable.render.fire();
+        }
+    }
+
+    private _scheduleAnimations(): void {
+        if (this._animationFrameHandle !== null) {
+            return;
+        }
+
+        this._animationFrameHandle = requestAnimationFrame((timestamp) => {
+            this._animationFrameHandle = null;
+
+            this._animations.progress(timestamp);
+            this._immediateRender();
+
+            if (this._animations.count() > 0 && ! this._destroyed) {
+                this._scheduleAnimations();
+            }
+        });
+    }
+
+    private _onFeatureSetAdded(featureSet: FeatureSet): void {
+        this._renderFeatureSets.set(featureSet, this._createRenderFeatureSet(featureSet));
+    }
+
+    private _onFeatureSetRemoved(featureSet: FeatureSet): void {
+        this._renderFeatureSets.get(featureSet).destroy();
+        this._renderFeatureSets.delete(featureSet);
+    }
+
+    private _registerFeatureSets(): void {
+        this._listeners.add(this._featureSets, 'add', this._onFeatureSetAdded.bind(this));
+        this._listeners.add(this._featureSets, 'remove', this._onFeatureSetRemoved.bind(this));
+
+        this._featureSets.forEach(this._onFeatureSetAdded.bind(this));
+    }
 
     public observable: ObservableCollection = {
         render: new Observable()
