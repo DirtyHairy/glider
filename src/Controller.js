@@ -1,4 +1,4 @@
-import KineticTranslate from './KineticTranslate';
+import KineticTranslate from './animation/KineticTranslate';
 import * as utils from './utils';
 
 export default class Controller {
