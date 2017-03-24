@@ -1,5 +1,5 @@
 import DependencyProvider from './utils/DependencyProvider';
-import Observable from './utils/Observable';
+import {default as Observable, ObservableCollection} from './utils/Observable';
 
 export default class Transformation {
     constructor() {
@@ -15,41 +15,48 @@ export default class Transformation {
         Observable.delegate(this, this.observable);
     }
 
-    _notifyChange() {
-        this._dependencyProvider.bump();
-        this.observable.change.fire();
-    }
-
-    setScale(scale) {
+    setScale(scale: number): this {
         this._scale = scale;
         this._notifyChange();
 
         return this;
     }
 
-    setTranslateX(dx) {
+    setTranslateX(dx: number): this {
         this._translateX = dx;
         this._notifyChange();
 
         return this;
     }
 
-    setTranslateY(dy) {
+    setTranslateY(dy: number): this {
         this._translateY = dy;
         this._notifyChange();
 
         return this;
     }
 
-    getScale() {
+    getScale(): number {
         return this._scale;
     }
 
-    getTranslateX() {
+    getTranslateX(): number {
         return this._translateX;
     }
 
-    getTranslateY() {
+    getTranslateY(): number {
         return this._translateY;
     }
+
+    private _notifyChange(): void {
+        this._dependencyProvider.bump();
+        this.observable.change.fire();
+    }
+
+    public observable: ObservableCollection;
+
+    private _dependencyProvider: DependencyProvider;
+    private _scale: number;
+    private _translateX: number;
+    private _translateY: number;
 }
