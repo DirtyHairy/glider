@@ -140,12 +140,17 @@ export default class Controller {
         return this;
     }
 
+    startBatch() {
+        this._renderControl.startBatch();
+        return this;
+    }
+
+    commitBatch() {
+        this._renderControl.commitBatch();
+        return this;
+    }
+
     getScale() {
         return this._transformation.getScale();
     }
-
 }
-
-utils.delegateFluent(Controller.prototype, '_renderControl', [
-    'startBatch', 'commitBatch', 'suspendRender', 'resumeRender'
-]);

@@ -31,10 +31,7 @@ export default class KineticTranslate {
         if (Math.abs(factor * this._velocityX) < 0.01 && Math.abs(factor * this._velocityY) < 0.01) {
             this._finished = true;
         } else {
-            this._controller
-                .suspendRender()
-                .translateRelative(translateX - this._lastTranslateX, translateY - this._lastTranslateY)
-                .resumeRender();
+            this._controller.translateRelative(translateX - this._lastTranslateX, translateY - this._lastTranslateY);
 
             this._lastTranslateX = translateX;
             this._lastTranslateY = translateY;
