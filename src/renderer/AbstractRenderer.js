@@ -139,6 +139,14 @@ export default class AbstractRenderer {
         this._destroyed = true;
     }
 
+    getImageWidth() {
+        return this._imageLayer.getImageWidth();
+    }
+
+    getImageHeight() {
+        return this._imageLayer.getImageHeight();
+    }
+
     _createImageLayer(imageUrl) { //jshint ignore: line
         throw new Error('not implemented');
     }
@@ -158,5 +166,3 @@ export default class AbstractRenderer {
     _preInit() {
     }
 }
-
-utils.delegate(AbstractRenderer.prototype, '_imageLayer', ['getImageWidth', 'getImageHeight']);

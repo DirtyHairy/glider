@@ -122,17 +122,4 @@ export default class Viewer {
             this._featureSets = utils.destroy(this._featureSets);
         }
     }
-
 }
-
-utils.delegate(Viewer.prototype, '_controller', [
-    'getTranslateX', 'getTranslateY', 'getScale'
-]);
-
-utils.delegateFluent(Viewer.prototype, '_controller', [
-    'translateAbsolute', 'translateRelative', 'rescale', 'rescaleAroundCenter'
-]);
-
-utils.delegateFluent(Viewer.prototype, '_renderControl', [
-    'render', 'suspendRender', 'resumeRender', 'startBatch', 'commitBatch'
-]);
