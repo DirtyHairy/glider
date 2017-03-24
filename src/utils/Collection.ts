@@ -67,7 +67,7 @@ export default class Collection<T> implements ObservableDelegate {
         this._items = [];
     }
 
-    addListener?: <U>(observable: string, listener: Listener<U>) => void;
+    addListener?: <U>(observable: string, listener: Listener<U>) => Listener<U>;
     removeListener?: <U>(observable: string, listener: Listener<U>) => void;
 
     observable = {
