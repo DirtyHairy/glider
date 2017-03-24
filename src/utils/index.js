@@ -1,9 +1,3 @@
-export function extend(o, properties) {
-    Object.keys(properties).forEach((key) => {
-        o[key] = properties[key];
-    });
-}
-
 export function clamp(x, min, max) {
     if (x < min) {
         return min;
