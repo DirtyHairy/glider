@@ -75,7 +75,7 @@ export default class Collection<T> implements ObservableDelegate {
         remove: new Observable()
     };
 
-    private _items: Array<T> = [];
-    private _itemSet = new WeakSet<T>();
-    private _dependencyProvider = new DependencyProvider(this);
+    protected _items: Array<T> = [];
+    protected _itemSet = new WeakSet<T>();
+    protected _dependencyProvider = new DependencyProvider(this);
 }

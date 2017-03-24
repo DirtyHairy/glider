@@ -1,8 +1,8 @@
 import Collection from './Collection';
 import ListenerGroup from './ListenerGroup';
-import Observable from './Observable';
+import {default as Observable, ObservableDelegate} from './Observable';
 
-export default class TrackingCollection extends Collection {
+export default class TrackingCollection<T> extends Collection<T> {
     constructor() {
         super();
 
@@ -13,15 +13,15 @@ export default class TrackingCollection extends Collection {
         this.observable.remove.addListener(this._onRemoveItem.bind(this));
     }
 
-    _onAddItem(item) {
+    _onAddItem(item: ObservableDelegate) {
         this._listeners.add(item, 'change', this._onItemChange.bind(this));
     }
 
-    _onRemoveItem(item) {
+    _onRemoveItem(item: ObservableDelegate) {
         this._listeners.removeTarget(item);
     }
 
-    _onItemChange(item) {
+    _onItemChange(item: ObservableDelegate) {
         this._dependencyProvider.bump();
         this.observable.change.fire(item);
     }
@@ -35,4 +35,6 @@ export default class TrackingCollection extends Collection {
 
         Collection.prototype.destroy.apply(this);
     }
+
+    private _listeners: ListenerGroup;
 }
