@@ -1,4 +1,4 @@
-import {default as Observable, Listener, ObservableDelegate} from './Observable';
+import {default as Observable, Listener, ObservableCollection, ObservableDelegate} from './Observable';
 import DependencyProvider from './DependencyProvider';
 
 export default class Collection<T> implements ObservableDelegate {
@@ -70,7 +70,7 @@ export default class Collection<T> implements ObservableDelegate {
     addListener?: <U>(observable: string, listener: Listener<U>) => Listener<U>;
     removeListener?: <U>(observable: string, listener: Listener<U>) => void;
 
-    observable = {
+    observable: ObservableCollection = {
         add: new Observable(),
         remove: new Observable()
     };
