@@ -33,7 +33,7 @@
                     resizeHandler();
                     window.addEventListener('resize', resizeHandler);
 
-                    viewer.rescale(0.3);
+                    viewer.getController().rescale(0.3);
                 },
                 function(err) {
                     console.log('renderer failed to initialize', err);
