@@ -18,14 +18,11 @@ abstract class AbstractRenderer<RenderFeatureSetT extends utils.Destroyable> imp
         protected _transformation: Transformation,
         protected _featureSets: Collection<FeatureSet>
     ) {
-        // this._preInit(canvas, imageUrl, transformation, featureSets);
-
         Observable.delegate(this, this.observable);
-
         this._registerFeatureSets();
     }
 
-    _immediateRender() {
+    _immediateRender(): void {
         if (this._destroyed) {
             return;
         }
@@ -35,7 +32,7 @@ abstract class AbstractRenderer<RenderFeatureSetT extends utils.Destroyable> imp
         }
     }
 
-    _scheduleAnimations() {
+    _scheduleAnimations(): void {
         if (this._animationFrameHandle !== null) {
             return;
         }
@@ -56,19 +53,19 @@ abstract class AbstractRenderer<RenderFeatureSetT extends utils.Destroyable> imp
         this._renderFeatureSets.set(featureSet, this._createRenderFeatureSet(featureSet));
     }
 
-    _onFeatureSetRemoved(featureSet: FeatureSet) {
+    _onFeatureSetRemoved(featureSet: FeatureSet): void {
         this._renderFeatureSets.get(featureSet).destroy();
         this._renderFeatureSets.delete(featureSet);
     }
 
-    _registerFeatureSets() {
+    _registerFeatureSets(): void {
         this._listeners.add(this._featureSets, 'add', this._onFeatureSetAdded.bind(this));
         this._listeners.add(this._featureSets, 'remove', this._onFeatureSetRemoved.bind(this));
 
         this._featureSets.forEach(this._onFeatureSetAdded.bind(this));
     }
 
-    render() {
+    render(): this {
         if (!this._imageLayer.isReady() || this._renderPending || this._animations.count() > 0 || this._destroyed) {
             return this;
         }
@@ -83,11 +80,11 @@ abstract class AbstractRenderer<RenderFeatureSetT extends utils.Destroyable> imp
         return this;
     }
 
-    getCanvas() {
+    getCanvas(): HTMLCanvasElement {
         return this._canvas;
     }
 
-    applyCanvasResize() {
+    applyCanvasResize(): this {
         return this;
     }
 
