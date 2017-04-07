@@ -13,8 +13,6 @@ import ProjectionMatrix from './ProjectionMatrix';
 
 const TEXTURE_UNIT = 1;
 
-// tslint:disable:member-ordering
-
 class PickingManager {
     constructor(private _featureSets: Collection<FeatureSet>, private _glFeatureSets: WeakMap<FeatureSet, GlFeatureSet>,
                 private _transformationMatrix: TransformationMatrix, private _projectionMatrix: ProjectionMatrix,
@@ -29,6 +27,72 @@ class PickingManager {
         this._registerFeatureSets();
 
         return this;
+    }
+
+    public adjustViewportSize(width: number, height: number): this {
+        this._width = width;
+        this._height = height;
+
+        this._texture.bind(TEXTURE_UNIT, (ctx) => ctx.loadPixelData(width, height, null));
+
+        this._forceRedraw = true;
+
+        this._pickingBuffer.adjustViewportSize(width, height);
+
+        return this;
+    }
+
+    public getFeatureAt(x: number, y: number): Feature {
+        const gl = this._gl;
+
+        if (Math.abs(x) > this._width / 2  || Math.abs(y) > this._height / 2) {
+            return null;
+        }
+
+        if (!this._render()) {
+            this._fbo.bind();
+        }
+
+        let pixelData: Uint8Array;
+
+        if (this._pickingBuffer.contains(x, y) || ++this._pickingBufferMiss > this._pickingBufferThreshold) {
+            pixelData = this._pickingBuffer.read(x, y);
+            this._pickingBufferMiss = 0;
+        }
+
+        if (!pixelData) {
+            pixelData = new Uint8Array(4);
+            gl.readPixels(Math.floor(x + this._width / 2), Math.floor(y + this._height / 2),
+                1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelData);
+        }
+
+        // tslint:disable:no-bitwise
+        const featureSetIdx = (pixelData[0] << 8) | pixelData[1],
+            featureIdx = (pixelData[2] << 8) | pixelData[3],
+            featureSet = (featureSetIdx > 0 && featureSetIdx <= this._featureSets.count()) ?
+                this._featureSets.get(featureSetIdx - 1) : null,
+            feature = (featureSet && featureIdx < featureSet.count()) ? featureSet.get(featureIdx) : null;
+        // tslint:enable:no-bitwise
+
+        return feature;
+    }
+
+    public isExpensive(x: number, y: number): boolean {
+        return !this._pickingBuffer.contains(x, y);
+    }
+
+    public destroy(): void {
+        this._fbo = utils.destroy(this._fbo);
+        this._texture = utils.destroy(this._texture);
+        this._pickingBuffer = utils.destroy(this._pickingBuffer);
+
+        if (this._featureSets) {
+            this._featureSets.forEach((featureSet) => this._colorManagers.delete(featureSet));
+
+            this._listeners.removeTarget(this._featureSets);
+
+            this._featureSets = null;
+        }
     }
 
     private _setupFramebuffer(): void {
@@ -120,72 +184,6 @@ class PickingManager {
         }
 
         return redraw;
-    }
-
-    public adjustViewportSize(width: number, height: number): this {
-        this._width = width;
-        this._height = height;
-
-        this._texture.bind(TEXTURE_UNIT, (ctx) => ctx.loadPixelData(width, height, null));
-
-        this._forceRedraw = true;
-
-        this._pickingBuffer.adjustViewportSize(width, height);
-
-        return this;
-    }
-
-    public getFeatureAt(x: number, y: number): Feature {
-        const gl = this._gl;
-
-        if (Math.abs(x) > this._width / 2  || Math.abs(y) > this._height / 2) {
-            return null;
-        }
-
-        if (!this._render()) {
-            this._fbo.bind();
-        }
-
-        let pixelData: Uint8Array;
-
-        if (this._pickingBuffer.contains(x, y) || ++this._pickingBufferMiss > this._pickingBufferThreshold) {
-            pixelData = this._pickingBuffer.read(x, y);
-            this._pickingBufferMiss = 0;
-        }
-
-        if (!pixelData) {
-            pixelData = new Uint8Array(4);
-            gl.readPixels(Math.floor(x + this._width / 2), Math.floor(y + this._height / 2),
-                1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelData);
-        }
-
-        // tslint:disable:no-bitwise
-        const featureSetIdx = (pixelData[0] << 8) | pixelData[1],
-            featureIdx = (pixelData[2] << 8) | pixelData[3],
-            featureSet = (featureSetIdx > 0 && featureSetIdx <= this._featureSets.count()) ?
-                this._featureSets.get(featureSetIdx - 1) : null,
-            feature = (featureSet && featureIdx < featureSet.count()) ? featureSet.get(featureIdx) : null;
-        // tslint:enable:no-bitwise
-
-        return feature;
-    }
-
-    public isExpensive(x: number, y: number): boolean {
-        return !this._pickingBuffer.contains(x, y);
-    }
-
-    public destroy(): void {
-        this._fbo = utils.destroy(this._fbo);
-        this._texture = utils.destroy(this._texture);
-        this._pickingBuffer = utils.destroy(this._pickingBuffer);
-
-        if (this._featureSets) {
-            this._featureSets.forEach((featureSet) => this._colorManagers.delete(featureSet));
-
-            this._listeners.removeTarget(this._featureSets);
-
-            this._featureSets = null;
-        }
     }
 
     private _gl: WebGLRenderingContext = null;
