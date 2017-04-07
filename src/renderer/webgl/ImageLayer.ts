@@ -31,121 +31,6 @@ export default class ImageLayer {
         return this;
     }
 
-    _loadImageData(): Promise<HTMLCanvasElement> {
-        return utils.loadImage(this._url)
-            .then((image) => {
-                    const paddedWidth = Math.pow(2, Math.floor(Math.log(image.width) / Math.log(2)) + 1),
-                        paddedHeight = Math.pow(2, Math.floor(Math.log(image.width) / Math.log(2)) + 1),
-                        canvas = document.createElement('canvas'),
-                        ctx = canvas.getContext('2d');
-
-                    canvas.width = this._textureWidth = paddedWidth;
-                    canvas.height = this._textureHeight = paddedHeight;
-
-                    this._imageWidth = image.width;
-                    this._imageHeight = image.height;
-
-                    ctx.drawImage(image,
-                        0, 0, image.width, image.height,
-                        0, paddedHeight - image.height, image.width, image.height);
-
-                    // Simulate CLAMP_TO_EDGE for the open ends of the padded texture ---
-                    // otherwise, sampling at the edges will give a frame effect.
-                    for (let i = 0; i < paddedWidth - image.width; i++) {
-                        ctx.drawImage(image,
-                            image.width - 1, 0, 1, image.height,
-                            image.width + i, paddedHeight - image.height, 1, image.height);
-                    }
-
-                    // dito
-                    for (let i = 0; i < paddedHeight - image.height; i++) {
-                        ctx.drawImage(image,
-                            0, 0, image.width, 1,
-                            0, paddedHeight - image.height - i, image.width, 1
-                        );
-                    }
-
-                    // dito --- the top right corner fully degenerates to the color
-                    // of the top right pixel
-                    let topRightPixel =
-                        ctx.getImageData(image.width - 1, paddedHeight - image.height, 1, 1).data;
-                    ctx.fillStyle = `rgb(${topRightPixel[0]},${topRightPixel[1]},${topRightPixel[2]})`;
-                    ctx.fillRect(image.width, 0, paddedWidth - image.width, paddedHeight - image.height);
-
-                    return canvas;
-                });
-    }
-
-    _createVertexBuffer(): void {
-        const gl = this._gl,
-            width = this._imageWidth,
-            height = this._imageHeight,
-            data = [
-                -width / 2, height / 2,    width / 2, height / 2,
-                -width / 2, -height / 2,   width / 2, -height / 2
-            ];
-
-        this._vertexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
-    }
-
-    _createTextureCoordinateBuffer(): void {
-        const gl = this._gl,
-            width = this._imageWidth,
-            height = this._imageHeight,
-            textureWidth = this._textureWidth,
-            textureHeight = this._textureHeight,
-            scaleH = width / textureWidth,
-            scaleV = height / textureHeight,
-            data = [
-                0, scaleV,      scaleH, scaleV,
-                0, 0 ,          scaleH, 0
-            ];
-
-        this._textureCoordinateBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this._textureCoordinateBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
-    }
-
-    _createTexture(imageData: HTMLImageElement | HTMLCanvasElement): void {
-        this._texture = Texture.fromImageOrCanvas(this._gl, imageData, TEXTURE_UNIT, {
-            magFilter: this._gl.LINEAR,
-            minFilter: this._gl.LINEAR_MIPMAP_NEAREST,
-            wrapS: this._gl.CLAMP_TO_EDGE,
-            wrapT: this._gl.CLAMP_TO_EDGE,
-            flipY: true
-        });
-    }
-
-    _updateProjectionMatrix() {
-        this._dependencyTracker.update(this._projectionMatrix, () => {
-            this._program.use((ctx) =>
-                ctx.uniformMatrix4fv('u_ProjectionMatrix', this._projectionMatrix.getMatrix()));
-        });
-    }
-
-    _updateTransformationMatrix() {
-        this._dependencyTracker.update(this._transformationMatrix, () => {
-            this._program.use((ctx) =>
-                ctx.uniformMatrix4fv('u_TransformationMatrix', this._transformationMatrix.getMatrix()));
-        });
-    }
-
-    _rebindBuffers() {
-        const gl = this._gl;
-
-        this._program.use((ctx) => {
-            gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
-            ctx.enableVertexAttribArray('a_VertexPosition');
-            ctx.vertexAttribPointer('a_VertexPosition', 2, gl.FLOAT);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, this._textureCoordinateBuffer);
-            ctx.enableVertexAttribArray('a_TextureCoordinate');
-            ctx.vertexAttribPointer('a_TextureCoordinate', 2, gl.FLOAT);
-        });
-    }
-
     getImageWidth() {
         return this._imageWidth;
     }
@@ -192,19 +77,134 @@ export default class ImageLayer {
         }
     }
 
-        private _gl: WebGLRenderingContext = null;
-        private _dependencyTracker = new DependencyTracker();
-        private _program: Program = null;
+    private _loadImageData(): Promise<HTMLCanvasElement> {
+        return utils.loadImage(this._url)
+            .then((image) => {
+                    const paddedWidth = Math.pow(2, Math.floor(Math.log(image.width) / Math.log(2)) + 1),
+                        paddedHeight = Math.pow(2, Math.floor(Math.log(image.width) / Math.log(2)) + 1),
+                        canvas = document.createElement('canvas'),
+                        ctx = canvas.getContext('2d');
 
-        private _imageHeight = 0;
-        private _imageWidth = 0;
-        private _textureHeight = 0;
-        private _textureWidth = 0;
+                    canvas.width = this._textureWidth = paddedWidth;
+                    canvas.height = this._textureHeight = paddedHeight;
 
-        private _vertexBuffer: WebGLBuffer = null;
-        private _textureCoordinateBuffer: WebGLBuffer = null;
-        private _texture: Texture;
+                    this._imageWidth = image.width;
+                    this._imageHeight = image.height;
 
-        private _isReady = false;
-        private _readyPromise: Promise<any> = null;
+                    ctx.drawImage(image,
+                        0, 0, image.width, image.height,
+                        0, paddedHeight - image.height, image.width, image.height);
+
+                    // Simulate CLAMP_TO_EDGE for the open ends of the padded texture ---
+                    // otherwise, sampling at the edges will give a frame effect.
+                    for (let i = 0; i < paddedWidth - image.width; i++) {
+                        ctx.drawImage(image,
+                            image.width - 1, 0, 1, image.height,
+                            image.width + i, paddedHeight - image.height, 1, image.height);
+                    }
+
+                    // dito
+                    for (let i = 0; i < paddedHeight - image.height; i++) {
+                        ctx.drawImage(image,
+                            0, 0, image.width, 1,
+                            0, paddedHeight - image.height - i, image.width, 1
+                        );
+                    }
+
+                    // dito --- the top right corner fully degenerates to the color
+                    // of the top right pixel
+                    let topRightPixel =
+                        ctx.getImageData(image.width - 1, paddedHeight - image.height, 1, 1).data;
+                    ctx.fillStyle = `rgb(${topRightPixel[0]},${topRightPixel[1]},${topRightPixel[2]})`;
+                    ctx.fillRect(image.width, 0, paddedWidth - image.width, paddedHeight - image.height);
+
+                    return canvas;
+                });
+    }
+
+    private _createVertexBuffer(): void {
+        const gl = this._gl,
+            width = this._imageWidth,
+            height = this._imageHeight,
+            data = [
+                -width / 2, height / 2,    width / 2, height / 2,
+                -width / 2, -height / 2,   width / 2, -height / 2
+            ];
+
+        this._vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    }
+
+    private _createTextureCoordinateBuffer(): void {
+        const gl = this._gl,
+            width = this._imageWidth,
+            height = this._imageHeight,
+            textureWidth = this._textureWidth,
+            textureHeight = this._textureHeight,
+            scaleH = width / textureWidth,
+            scaleV = height / textureHeight,
+            data = [
+                0, scaleV,      scaleH, scaleV,
+                0, 0 ,          scaleH, 0
+            ];
+
+        this._textureCoordinateBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._textureCoordinateBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    }
+
+    private _createTexture(imageData: HTMLImageElement | HTMLCanvasElement): void {
+        this._texture = Texture.fromImageOrCanvas(this._gl, imageData, TEXTURE_UNIT, {
+            magFilter: this._gl.LINEAR,
+            minFilter: this._gl.LINEAR_MIPMAP_NEAREST,
+            wrapS: this._gl.CLAMP_TO_EDGE,
+            wrapT: this._gl.CLAMP_TO_EDGE,
+            flipY: true
+        });
+    }
+
+    private _updateProjectionMatrix() {
+        this._dependencyTracker.update(this._projectionMatrix, () => {
+            this._program.use((ctx) =>
+                ctx.uniformMatrix4fv('u_ProjectionMatrix', this._projectionMatrix.getMatrix()));
+        });
+    }
+
+    private _updateTransformationMatrix() {
+        this._dependencyTracker.update(this._transformationMatrix, () => {
+            this._program.use((ctx) =>
+                ctx.uniformMatrix4fv('u_TransformationMatrix', this._transformationMatrix.getMatrix()));
+        });
+    }
+
+    private _rebindBuffers() {
+        const gl = this._gl;
+
+        this._program.use((ctx) => {
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
+            ctx.enableVertexAttribArray('a_VertexPosition');
+            ctx.vertexAttribPointer('a_VertexPosition', 2, gl.FLOAT);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._textureCoordinateBuffer);
+            ctx.enableVertexAttribArray('a_TextureCoordinate');
+            ctx.vertexAttribPointer('a_TextureCoordinate', 2, gl.FLOAT);
+        });
+    }
+
+    private _gl: WebGLRenderingContext = null;
+    private _dependencyTracker = new DependencyTracker();
+    private _program: Program = null;
+
+    private _imageHeight = 0;
+    private _imageWidth = 0;
+    private _textureHeight = 0;
+    private _textureWidth = 0;
+
+    private _vertexBuffer: WebGLBuffer = null;
+    private _textureCoordinateBuffer: WebGLBuffer = null;
+    private _texture: Texture;
+
+    private _isReady = false;
+    private _readyPromise: Promise<any> = null;
 }
