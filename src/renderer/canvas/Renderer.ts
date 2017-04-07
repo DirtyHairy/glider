@@ -1,13 +1,15 @@
+import FeatureSet from '../../FeatureSet';
 import ImageLayer from './ImageLayer';
 import RenderFeatureSet from './RenderFeatureSet';
 import AbstractRenderer from '../AbstractRenderer';
+import PickingManager from '../PickingManager';
 
-export default class Renderer extends AbstractRenderer {
+// tslint:disable:member-ordering
+
+export default class Renderer extends AbstractRenderer<RenderFeatureSet> {
     init() {
         this._ctx = this._canvas.getContext('2d');
         this._ctx.save();
-
-        this._forceRedraw = true;
 
         this._pickingManager = this._createPickingManager();
         this._imageLayer = this._createImageLayer(this._imageUrl);
@@ -15,22 +17,22 @@ export default class Renderer extends AbstractRenderer {
         return this;
     }
 
-    _createImageLayer(imageUrl) {
+    private _createImageLayer(imageUrl: string): ImageLayer {
         return new ImageLayer(this._ctx, imageUrl, this._transformation, this._canvas);
     }
 
-    _createPickingManager() {
+    private _createPickingManager(): PickingManager {
         return {
             getFeatureAt: () => null,
             isExpensive: () => false
         };
     }
 
-    _createRenderFeatureSet(featureSet) {
+    protected _createRenderFeatureSet(featureSet: FeatureSet): RenderFeatureSet {
         return new RenderFeatureSet(this._ctx, featureSet, this._transformation, this._canvas);
     }
 
-    _renderImplementation() {
+    protected _renderImplementation(): boolean {
         let didRender = false;
 
         const exec = () => {
@@ -52,11 +54,16 @@ export default class Renderer extends AbstractRenderer {
         return didRender;
     }
 
-    applyCanvasResize() {
+    applyCanvasResize(): this {
         AbstractRenderer.prototype.applyCanvasResize.apply(this);
 
         this._forceRedraw = true;
 
         return this;
     }
+
+    protected _imageLayer: ImageLayer;
+
+    private _ctx: CanvasRenderingContext2D;
+    private _forceRedraw: boolean = true;
 }

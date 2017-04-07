@@ -1,7 +1,8 @@
 import * as utils from '../../utils';
+import ImageLayerInterface from '../ImageLayer';
 import Transformation from '../../Transformation';
 
-export default class ImageLayer {
+export default class ImageLayer implements ImageLayerInterface {
     constructor(
         private _ctx: CanvasRenderingContext2D,
         private _imageUrl: string,

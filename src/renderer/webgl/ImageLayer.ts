@@ -1,4 +1,5 @@
 import DependencyTracker from '../../utils/DependencyTracker';
+import ImageLayerInterface from '../ImageLayer';
 import Program from './glutil/Program';
 import Texture from './glutil/Texture';
 import ProjectionMatrix from './ProjectionMatrix';
@@ -8,7 +9,7 @@ import * as utils from '../../utils';
 
 const TEXTURE_UNIT = 0;
 
-export default class ImageLayer {
+export default class ImageLayer implements ImageLayerInterface {
     constructor(
         private _url: string,
         private _projectionMatrix: ProjectionMatrix,
