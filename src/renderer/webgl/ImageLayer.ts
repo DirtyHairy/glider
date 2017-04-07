@@ -1,34 +1,21 @@
 import DependencyTracker from '../../utils/DependencyTracker';
 import Program from './glutil/Program';
 import Texture from './glutil/Texture';
+import ProjectionMatrix from './ProjectionMatrix';
+import TransformationMatrix from './TransformationMatrix';
 import * as shader from './shader';
 import * as utils from '../../utils';
 
 const TEXTURE_UNIT = 0;
 
 export default class ImageLayer {
-    constructor(url, projectionMatrix, transformationMatrix) {
-        this._gl = null;
-        this._url = url;
-        this._projectionMatrix = projectionMatrix;
-        this._transformationMatrix = transformationMatrix;
-        this._dependencyTracker = new DependencyTracker();
-        this._program = null;
+    constructor(
+        private _url: string,
+        private _projectionMatrix: ProjectionMatrix,
+        private _transformationMatrix: TransformationMatrix
+     ) {}
 
-        this._imageHeight = 0;
-        this._imageWidth = 0;
-        this._textureHeight = 0;
-        this._textureWidth = 0;
-
-        this._vertexBuffer = null;
-        this._textureCoordinateBuffer = null;
-        this._texture = null;
-
-        this._isReady = false;
-        this._readyPromise = null;
-    }
-
-    init(gl) {
+    init(gl: WebGLRenderingContext): this {
         this._gl = gl;
         this._program = new Program(gl, shader.vsh.imagelayer, shader.fsh.imagelayer);
 
@@ -44,7 +31,7 @@ export default class ImageLayer {
         return this;
     }
 
-    _loadImageData() {
+    _loadImageData(): Promise<HTMLCanvasElement> {
         return utils.loadImage(this._url)
             .then((image) => {
                     const paddedWidth = Math.pow(2, Math.floor(Math.log(image.width) / Math.log(2)) + 1),
@@ -89,13 +76,13 @@ export default class ImageLayer {
                 });
     }
 
-    _createVertexBuffer() {
+    _createVertexBuffer(): void {
         const gl = this._gl,
             width = this._imageWidth,
             height = this._imageHeight,
             data = [
-                -width/2, height/2,    width/2, height/2,
-                -width/2, -height/2,   width/2, -height/2
+                -width / 2, height / 2,    width / 2, height / 2,
+                -width / 2, -height / 2,   width / 2, -height / 2
             ];
 
         this._vertexBuffer = gl.createBuffer();
@@ -103,7 +90,7 @@ export default class ImageLayer {
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
     }
 
-    _createTextureCoordinateBuffer() {
+    _createTextureCoordinateBuffer(): void {
         const gl = this._gl,
             width = this._imageWidth,
             height = this._imageHeight,
@@ -121,7 +108,7 @@ export default class ImageLayer {
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
     }
 
-    _createTexture(imageData) {
+    _createTexture(imageData: HTMLImageElement | HTMLCanvasElement): void {
         this._texture = Texture.fromImageOrCanvas(this._gl, imageData, TEXTURE_UNIT, {
             magFilter: this._gl.LINEAR,
             minFilter: this._gl.LINEAR_MIPMAP_NEAREST,
@@ -204,4 +191,20 @@ export default class ImageLayer {
             this._textureCoordinateBuffer = null;
         }
     }
+
+        private _gl: WebGLRenderingContext = null;
+        private _dependencyTracker = new DependencyTracker();
+        private _program: Program = null;
+
+        private _imageHeight = 0;
+        private _imageWidth = 0;
+        private _textureHeight = 0;
+        private _textureWidth = 0;
+
+        private _vertexBuffer: WebGLBuffer = null;
+        private _textureCoordinateBuffer: WebGLBuffer = null;
+        private _texture: Texture;
+
+        private _isReady = false;
+        private _readyPromise: Promise<any> = null;
 }

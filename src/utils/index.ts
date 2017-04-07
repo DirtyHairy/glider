@@ -22,7 +22,7 @@ export function destroy(victim: Destroyable): null {
     return null;
 }
 
-export function loadImage(url: string) {
+export function loadImage(url: string): Promise<HTMLImageElement> {
     const image = new Image();
 
     return new Promise((resolve, reject) => {

@@ -103,7 +103,7 @@ export interface TextureOptions {
     minFilter?: number;
     wrapS?: number;
     wrapT?: number;
-    flipY?: number;
+    flipY?: boolean;
     texelFormat?: number;
     format?: number;
 }

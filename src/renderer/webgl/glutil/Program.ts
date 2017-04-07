@@ -125,9 +125,9 @@ class BoundContext {
         return this;
     }
 
-    uniformMatrix2fv: (name: string, value: Float32Array, transpose: boolean) => void;
-    uniformMatrix3fv: (name: string, value: Float32Array, transpose: boolean) => void;
-    uniformMatrix4fv: (name: string, value: Float32Array, transpose: boolean) => void;
+    uniformMatrix2fv: (name: string, value: Float32Array, transpose?: boolean) => void;
+    uniformMatrix3fv: (name: string, value: Float32Array, transpose?: boolean) => void;
+    uniformMatrix4fv: (name: string, value: Float32Array, transpose?: boolean) => void;
 
     uniform1i: (name: string, value1: number) => void;
     uniform2i: (name: string, value1: number, value2: number) => void;
