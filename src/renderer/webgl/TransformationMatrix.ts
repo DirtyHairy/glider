@@ -11,10 +11,6 @@ export default class TransformationMatrix {
         this._listenerGroup.add(this._transformation, 'change', this._onTransformationChange.bind(this));
     }
 
-    _onTransformationChange(): void {
-        this._dependencyProvider.bump();
-    }
-
     getMatrix(): mat4 {
         if (!this._dependencyTracker.isCurrent(this._transformation)) {
             const t = this._transformation,
@@ -35,6 +31,10 @@ export default class TransformationMatrix {
 
     destroy(): void {
         this._listenerGroup.removeTarget(this._transformation);
+    }
+
+    private _onTransformationChange(): void {
+        this._dependencyProvider.bump();
     }
 
     private _dependencyProvider = new DependencyProvider(this);

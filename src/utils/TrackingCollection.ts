@@ -13,19 +13,6 @@ export default class TrackingCollection<T> extends Collection<T> {
         this.observable.remove.addListener(this._onRemoveItem.bind(this));
     }
 
-    _onAddItem(item: ObservableDelegate) {
-        this._listeners.add(item, 'change', this._onItemChange.bind(this));
-    }
-
-    _onRemoveItem(item: ObservableDelegate) {
-        this._listeners.removeTarget(item);
-    }
-
-    _onItemChange(item: ObservableDelegate) {
-        this._dependencyProvider.bump();
-        this.observable.change.fire(item);
-    }
-
     destroy() {
         if (this._items) {
             this._items.forEach((item) => {
@@ -34,6 +21,19 @@ export default class TrackingCollection<T> extends Collection<T> {
         }
 
         Collection.prototype.destroy.apply(this);
+    }
+
+    private _onAddItem(item: ObservableDelegate) {
+        this._listeners.add(item, 'change', this._onItemChange.bind(this));
+    }
+
+    private _onRemoveItem(item: ObservableDelegate) {
+        this._listeners.removeTarget(item);
+    }
+
+    private _onItemChange(item: ObservableDelegate) {
+        this._dependencyProvider.bump();
+        this.observable.change.fire(item);
     }
 
     private _listeners: ListenerGroup;

@@ -13,11 +13,6 @@ export default class ImageLayer implements ImageLayerInterface {
         this._ready = this._init();
     }
 
-    _init(): Promise<any> {
-        return utils.loadImage(this._imageUrl)
-            .then((image) => this._image = image);
-    }
-
     ready(): Promise<any> {
         return this._ready;
     }
@@ -68,6 +63,11 @@ export default class ImageLayer implements ImageLayerInterface {
 
     getImageHeight(): number {
         return this._image.height;
+    }
+
+    private _init(): Promise<any> {
+        return utils.loadImage(this._imageUrl)
+            .then((image) => this._image = image);
     }
 
     private _image: HTMLImageElement = null;
