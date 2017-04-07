@@ -1,53 +1,54 @@
 import * as utils from './utils';
+import RenderControl from './RenderControl';
+import Transformation from './Transformation';
+
+// tslint:disable:member-ordering
 
 export default class Controller {
-    constructor(renderControl, transformation) {
-        this._renderControl = renderControl;
-        this._transformation = transformation;
-        this._scaleMin = 0.1;
-        this._scaleMax = 10;
-        this._clampRelativeBorder = 0.2;
-    }
+    constructor(
+        private _renderControl: RenderControl,
+        private _transformation: Transformation
+    ) {}
 
-    _clampTranslateX(dx) {
+    private _clampTranslateX(dx: number): number {
         const renderer = this._renderControl.getRenderer(),
             canvas = renderer.getCanvas(),
-            canvasWidth = canvas.width/2,
-            imageWidth = renderer.getImageWidth()/2,
+            canvasWidth = canvas.width / 2,
+            imageWidth = renderer.getImageWidth() / 2,
             scale = this._transformation.getScale(),
             border = canvasWidth * this._clampRelativeBorder;
 
-        if (canvasWidth - (dx - imageWidth)*scale < border) {
-            return (canvasWidth - border)/scale + imageWidth;
+        if (canvasWidth - (dx - imageWidth) * scale < border) {
+            return (canvasWidth - border) / scale + imageWidth;
         }
 
-        if ((dx + imageWidth)*scale + canvasWidth < border) {
-            return (border - canvasWidth)/scale - imageWidth;
+        if ((dx + imageWidth) * scale + canvasWidth < border) {
+            return (border - canvasWidth) / scale - imageWidth;
         }
 
         return dx;
     }
 
-    _clampTranslateY(dy) {
+    private _clampTranslateY(dy: number): number {
         const renderer = this._renderControl.getRenderer(),
             canvas = renderer.getCanvas(),
-            canvasHeight = canvas.height/2,
-            imageHeight = renderer.getImageHeight()/2,
+            canvasHeight = canvas.height / 2,
+            imageHeight = renderer.getImageHeight() / 2,
             scale = this._transformation.getScale(),
             border = canvasHeight * this._clampRelativeBorder;
 
-        if (canvasHeight - (dy - imageHeight)*scale < border) {
-            return (canvasHeight - border)/scale + imageHeight;
+        if (canvasHeight - (dy - imageHeight) * scale < border) {
+            return (canvasHeight - border) / scale + imageHeight;
         }
 
-        if ((dy + imageHeight)*scale + canvasHeight < border) {
-            return (border - canvasHeight)/scale - imageHeight;
+        if ((dy + imageHeight) * scale + canvasHeight < border) {
+            return (border - canvasHeight) / scale - imageHeight;
         }
 
         return dy;
     }
 
-    translateAbsolute(dx, dy) {
+    translateAbsolute(dx: number, dy: number): this {
         const t = this._transformation;
 
         t.setTranslateX(this._clampTranslateX(dx));
@@ -58,7 +59,7 @@ export default class Controller {
         return this;
     }
 
-    translateRelative(dx, dy) {
+    translateRelative(dx: number, dy: number): this {
         const t = this._transformation;
 
         t.setTranslateX(this._clampTranslateX(t.getTranslateX() + dx));
@@ -69,7 +70,7 @@ export default class Controller {
         return this;
     }
 
-    clampToScreen() {
+    clampToScreen(): this {
         const t = this._transformation,
             dx = t.getTranslateX(),
             dy = t.getTranslateY(),
@@ -85,15 +86,15 @@ export default class Controller {
         return this;
     }
 
-    getTranslateX() {
+    getTranslateX(): number {
         return this._transformation.getTranslateX();
     }
 
-    getTranslateY() {
+    getTranslateY(): number {
         return this._transformation.getTranslateY();
     }
 
-    rescale(scale) {
+    rescale(scale: number): this {
         this._transformation.setScale(utils.clamp(scale, this._scaleMin, this._scaleMax));
 
         this._renderControl.render();
@@ -101,12 +102,12 @@ export default class Controller {
         return this;
     }
 
-    rescaleAroundCenter(scale, centerX, centerY) {
+    rescaleAroundCenter(scale: number, centerX: number, centerY: number): this {
         scale = utils.clamp(scale, this._scaleMin, this._scaleMax);
 
         const t = this._transformation,
             oldScale = t.getScale(),
-            fac = 1 - scale/oldScale;
+            fac = 1 - scale / oldScale;
 
         this
             .startBatch()
@@ -117,17 +118,21 @@ export default class Controller {
         return this;
     }
 
-    startBatch() {
+    startBatch(): this {
         this._renderControl.startBatch();
         return this;
     }
 
-    commitBatch() {
+    commitBatch(): this {
         this._renderControl.commitBatch();
         return this;
     }
 
-    getScale() {
+    getScale(): number {
         return this._transformation.getScale();
     }
+
+    private _scaleMin = 0.1;
+    private _scaleMax = 10;
+    private _clampRelativeBorder = 0.2;
 }
