@@ -6,13 +6,6 @@ class PickingBuffer {
         this._buffer = new Uint8Array(this._extend * this._extend * 4);
     }
 
-    _windowCoordinates(x: number, y: number): Point {
-        return {
-            x: Math.floor(x + this._canvasWidth / 2),
-            y: Math.floor(y + this._canvasHeight / 2)
-        };
-    }
-
     contains(x: number, y: number): boolean {
         const {x: windowX, y: windowY} = this._windowCoordinates(x, y);
 
@@ -57,6 +50,13 @@ class PickingBuffer {
         this._canvasWidth = width;
         this._canvasHeight = height;
         this._valid = false;
+    }
+
+    private _windowCoordinates(x: number, y: number): Point {
+        return {
+            x: Math.floor(x + this._canvasWidth / 2),
+            y: Math.floor(y + this._canvasHeight / 2)
+        };
     }
 
     private _bottom: number = 0;
