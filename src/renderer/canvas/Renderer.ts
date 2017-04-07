@@ -4,8 +4,6 @@ import RenderFeatureSet from './RenderFeatureSet';
 import AbstractRenderer from '../AbstractRenderer';
 import PickingManager from '../PickingManager';
 
-// tslint:disable:member-ordering
-
 export default class Renderer extends AbstractRenderer<RenderFeatureSet> {
     init() {
         this._ctx = this._canvas.getContext('2d');
@@ -17,15 +15,12 @@ export default class Renderer extends AbstractRenderer<RenderFeatureSet> {
         return this;
     }
 
-    private _createImageLayer(imageUrl: string): ImageLayer {
-        return new ImageLayer(this._ctx, imageUrl, this._transformation, this._canvas);
-    }
+    applyCanvasResize(): this {
+        AbstractRenderer.prototype.applyCanvasResize.apply(this);
 
-    private _createPickingManager(): PickingManager {
-        return {
-            getFeatureAt: () => null,
-            isExpensive: () => false
-        };
+        this._forceRedraw = true;
+
+        return this;
     }
 
     protected _createRenderFeatureSet(featureSet: FeatureSet): RenderFeatureSet {
@@ -54,12 +49,15 @@ export default class Renderer extends AbstractRenderer<RenderFeatureSet> {
         return didRender;
     }
 
-    applyCanvasResize(): this {
-        AbstractRenderer.prototype.applyCanvasResize.apply(this);
+    private _createImageLayer(imageUrl: string): ImageLayer {
+        return new ImageLayer(this._ctx, imageUrl, this._transformation, this._canvas);
+    }
 
-        this._forceRedraw = true;
-
-        return this;
+    private _createPickingManager(): PickingManager {
+        return {
+            getFeatureAt: () => null,
+            isExpensive: () => false
+        };
     }
 
     protected _imageLayer: ImageLayer;
