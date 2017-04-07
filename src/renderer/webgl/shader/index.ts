@@ -1,3 +1,5 @@
+declare function require(module: string): string;
+
 export const fsh = {
     feature: require('./feature.fsh'),
     imagelayer: require ('./imagelayer.fsh')

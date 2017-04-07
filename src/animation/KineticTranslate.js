@@ -1,3 +1,5 @@
+
+
 export default class KineticTranslate {
     constructor(controller, velocityX, velocityY, timeConstant) {
         this._controller = controller;

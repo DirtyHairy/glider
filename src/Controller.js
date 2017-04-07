@@ -1,15 +1,12 @@
-import KineticTranslate from './animation/KineticTranslate';
 import * as utils from './utils';
 
 export default class Controller {
     constructor(renderControl, transformation) {
         this._renderControl = renderControl;
         this._transformation = transformation;
-        this._kineticTranslate = null;
         this._scaleMin = 0.1;
         this._scaleMax = 10;
         this._clampRelativeBorder = 0.2;
-        this._kindeticTranslateTimeConstant = 325;
     }
 
     _clampTranslateX(dx) {
@@ -68,26 +65,6 @@ export default class Controller {
         t.setTranslateY(this._clampTranslateY(t.getTranslateY() + dy));
 
         this._renderControl.render();
-
-        return this;
-    }
-
-    kineticTranslate(velocityX, velocityY) {
-        this.stopKineticTranslate();
-
-        this._kineticTranslate = new KineticTranslate(
-            this, velocityX, velocityY, this._kindeticTranslateTimeConstant
-        );
-
-        this._renderControl.getRenderer().addAnimation(this._kineticTranslate);
-
-        return this;
-    }
-
-    stopKineticTranslate() {
-        if (this._kineticTranslate) {
-            this._kineticTranslate.cancel();
-        }
 
         return this;
     }

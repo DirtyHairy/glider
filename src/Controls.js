@@ -2,7 +2,8 @@ import * as utils from './utils';
 import * as Hammer from 'hammerjs';
 
 export default class Controls {
-    constructor(canvas, controller, featureInteractionProvider) {
+    constructor(canvas, controller, animation, featureInteractionProvider) {
+        this._animation = animation;
         this._canvas = canvas;
         this._controller = controller;
         this._manager = new Hammer.Manager(canvas);
@@ -87,7 +88,7 @@ export default class Controls {
         this._oldTranslateX = this._controller.getTranslateX();
         this._oldTranslateY = this._controller.getTranslateY();
 
-        this._controller.stopKineticTranslate();
+        this._animation.stopKineticTranslate();
         this._applyPan(e);
     }
 
@@ -101,7 +102,7 @@ export default class Controls {
         const scale = this._controller.getScale();
 
         this._applyPan(e);
-        this._controller.kineticTranslate(e.velocityX / scale, -e.velocityY / scale);
+        this._animation.kineticTranslate(e.velocityX / scale, -e.velocityY / scale);
 
         this._panning = false;
     }
@@ -139,7 +140,7 @@ export default class Controls {
         this._oldTranslateY = this._controller.getTranslateY();
         this._oldScale = this._controller.getScale();
 
-        this._controller.stopKineticTranslate();
+        this._animation.stopKineticTranslate();
         this._applyPinch(e);
     }
 
@@ -153,7 +154,7 @@ export default class Controls {
         const scale = this._controller.getScale();
 
         this._applyPinch(e);
-        this._controller.kineticTranslate(e.velocityX / scale, -e.velocityY / scale);
+        this._animation.kineticTranslate(e.velocityX / scale, -e.velocityY / scale);
 
         this._pinching = false;
     }

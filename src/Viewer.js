@@ -7,6 +7,7 @@ import Controller from './Controller';
 import * as rendererFactory from './renderer/factory';
 import Collection from './utils/Collection';
 import FeatureInteractionProvider from './FeatureInteractionProvider';
+import Animation from './Animation';
 
 export default class Viewer {
     constructor(rendererType, canvas, imageUrl) {
@@ -23,6 +24,7 @@ export default class Viewer {
         );
         this._controller = null;
         this._controls = null;
+        this._animation = null;
 
         this._listeners.add(this._renderer, 'render', this._onRender.bind(this));
 
@@ -33,7 +35,13 @@ export default class Viewer {
         return this._renderer.ready()
             .then(() => {
                 this._controller = new Controller(this._renderControl, this._transformation);
-                this._controls = new Controls(this._canvas, this._controller, this._featureInteractionProvider);
+                this._animation = new Animation(this._controller, this._renderer);
+                this._controls = new Controls(
+                    this._canvas,
+                    this._controller,
+                    this._animation,
+                    this._featureInteractionProvider
+                );
 
                 this._renderControl.render();
             });
