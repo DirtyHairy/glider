@@ -1,35 +1,27 @@
-export default class PickingBuffer {
-    constructor(extend, canvasWidth, canvasHeight, gl) {
-        this._initialized = false;
-        this._canvasWidth = canvasWidth;
-        this._canvasHeight = canvasHeight;
-        this._valid = false;
+import Point from '../../Point';
 
-        // These are webgl window coordinates!
-        this._bottom = 0;
-        this._left = 0;
-
-        this._extend = extend;
+class PickingBuffer {
+    constructor(private _extend: number, private _canvasWidth: number, private _canvasHeight: number,
+                private _gl: WebGLRenderingContext) {
         this._buffer = new Uint8Array(this._extend * this._extend * 4);
-        this._gl = gl;
     }
 
-    _windowCoordinates(x, y) {
+    _windowCoordinates(x: number, y: number): Point {
         return {
             x: Math.floor(x + this._canvasWidth / 2),
             y: Math.floor(y + this._canvasHeight / 2)
         };
     }
 
-    contains(x, y) {
+    contains(x: number, y: number): boolean {
         const {x: windowX, y: windowY} = this._windowCoordinates(x, y);
 
-        return  this._buffer && this._valid &&
+        return this._buffer && this._valid &&
                 (windowX >= this._left) && (windowX < this._left + this._extend) &&
                 (windowY >= this._bottom) && (windowY < this._bottom + this._extend);
     }
 
-    update(x, y) {
+    update(x: number, y: number): void {
         const gl = this._gl,
             {x: windowX, y: windowY} = this._windowCoordinates(x, y),
             shift = Math.ceil(this._extend / 2);
@@ -45,11 +37,11 @@ export default class PickingBuffer {
         this._valid = true;
     }
 
-    invalidate() {
+    invalidate(): void {
         this._valid = false;
     }
 
-    read(x, y) {
+    read(x: number, y: number): Uint8Array {
         if (!this.contains(x, y)) {
             this.update(x, y);
         }
@@ -61,9 +53,16 @@ export default class PickingBuffer {
         return new Uint8Array(this._buffer.buffer, 4 * (relY * Math.min(this._extend, this._canvasWidth) + relX), 4);
     }
 
-    adjustViewportSize(width, height) {
+    adjustViewportSize(width: number, height: number): void {
         this._canvasWidth = width;
         this._canvasHeight = height;
         this._valid = false;
     }
+
+    private _bottom: number = 0;
+    private _buffer: Uint8Array;
+    private _left: number = 0;
+    private _valid: boolean = false;
 }
+
+export default PickingBuffer;
