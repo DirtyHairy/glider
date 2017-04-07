@@ -1,20 +1,20 @@
 import DependencyProvider from '../../utils/DependencyProvider';
 import RGBA from '../../RGBA';
 
-export default class PickingColorManager {
-    constructor(featureSetIndex) {
-        this._featureSetIndex = featureSetIndex;
-        this._dependecyProvider = new DependencyProvider(this);
+class PickingColorManager {
+    constructor(private _featureSetIndex: number) {
+        this._dependencyProvider = new DependencyProvider(this);
     }
 
-    setFeatureSetIndex(index) {
+    setFeatureSetIndex(index: number) {
         this._featureSetIndex = index;
-        this._dependecyProvider.bump();
+        this._dependencyProvider.bump();
 
         return this;
     }
 
-    getColor(i) {
+    /* tslint:disable:no-bitwise */
+    getColor(i: number): RGBA {
         return new RGBA(
             (((this._featureSetIndex + 1) & 0xFF00) >>> 8) / 255,
             (( this._featureSetIndex + 1) & 0x00FF) / 255,
@@ -22,4 +22,8 @@ export default class PickingColorManager {
             ( i & 0x00FF) / 255
         );
     }
+
+    private _dependencyProvider: DependencyProvider;
 }
+
+export default PickingColorManager;

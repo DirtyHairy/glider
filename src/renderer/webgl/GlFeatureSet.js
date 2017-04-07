@@ -82,7 +82,7 @@ export default class GlFeatureSet {
         }
 
         const color = [
-            fillColor.r(), fillColor.g(), fillColor.b(), fillColor.alpha()
+            fillColor.r, fillColor.g, fillColor.b, fillColor.alpha
         ];
 
         for (let j = 0; j < 6; j++) {
@@ -123,7 +123,7 @@ export default class GlFeatureSet {
             pickingColor = pickingColorManager.getColor(i);
 
         const color = [
-            pickingColor.r(), pickingColor.g(), pickingColor.b(), pickingColor.alpha()
+            pickingColor.r, pickingColor.g, pickingColor.b, pickingColor.alpha
         ];
 
         for (let j = 0; j < 6; j++) {
