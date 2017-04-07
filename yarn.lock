@@ -6,6 +6,10 @@
   version "2.2.34"
   resolved "https://registry.yarnpkg.com/@types/gl-matrix/-/gl-matrix-2.2.34.tgz#8d1b5557d9143e9692b7b2083c56a5adc8113104"
 
+"@types/hammerjs@^2.0.34":
+  version "2.0.34"
+  resolved "https://registry.yarnpkg.com/@types/hammerjs/-/hammerjs-2.0.34.tgz#9cbac4f41cb039436141785e1be50b3ab10a04a9"
+
 abbrev@1:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/abbrev/-/abbrev-1.1.0.tgz#d0554c2256636e2f56e7c2e5ad183f859428d81f"

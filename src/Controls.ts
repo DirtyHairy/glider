@@ -1,25 +1,40 @@
-import * as utils from './utils';
 import * as Hammer from 'hammerjs';
 
+import * as utils from './utils';
+import Controller from './Controller';
+import Animation from './Animation';
+import FeatureInteractionProvider from './FeatureInteractionProvider';
+import Point from './Point';
+
+interface CanvasListener {
+    (e: UIEvent): void;
+}
+
 export default class Controls {
-    constructor(canvas, controller, animation, featureInteractionProvider) {
-        this._animation = animation;
-        this._canvas = canvas;
-        this._controller = controller;
-        this._manager = new Hammer.Manager(canvas);
-        this._canvasListeners = {};
-        this._featureInteractionProvider = featureInteractionProvider;
-
-        this._panning = false;
-        this._pinching = false;
-        this._oldScale = false;
-        this._oldTranslateX = 0;
-        this._oldTranslateY = 0;
-
+    constructor(
+        private _canvas: HTMLCanvasElement,
+        private _controller: Controller,
+        private _animation: Animation,
+        private _featureInteractionProvider: FeatureInteractionProvider
+    ) {
+        this._manager = new Hammer.Manager(this._canvas);
         this._setupListeners();
     }
 
-    _setupListeners() {
+    destroy(): void {
+        this._manager = utils.destroy(this._manager);
+
+        if (this._canvasListeners) {
+            Object.keys(this._canvasListeners).forEach(
+                (event) => this._canvasListeners[event].forEach(
+                    (listener) => this._canvas.removeEventListener(event, listener)
+                )
+            );
+            this._canvasListeners = null;
+        }
+    }
+
+    private _setupListeners(): void {
         let pan = new Hammer.Pan({
                 event: 'pan',
                 threshold: 1
@@ -44,7 +59,7 @@ export default class Controls {
         this._manager.on('pan', this._onPan.bind(this));
         this._manager.on('panstart', this._onPanStart.bind(this));
         this._manager.on('panend', this._onPanEnd.bind(this));
-        this._manager.on('pancancel', this._onPanCancel(this));
+        this._manager.on('pancancel', this._onPanCancel.bind(this));
 
         this._manager.on('pinch', this._onPinch.bind(this));
         this._manager.on('pinchstart', this._onPinchStart.bind(this));
@@ -58,11 +73,11 @@ export default class Controls {
 
         // Prevent browser mouse emulation
         ['touchstart', 'touchend', 'touchmove'].forEach(
-            (evt) => this._registerCanvasListener(evt, (e) => e.preventDefault())
+            (evt) => this._registerCanvasListener(evt, (e: UIEvent) => e.preventDefault())
         );
     }
 
-    _registerCanvasListener(event, listener) {
+    private _registerCanvasListener(event: string, listener: CanvasListener): void {
         if (!this._canvasListeners[event]) {
             this._canvasListeners[event] = [];
         }
@@ -71,7 +86,7 @@ export default class Controls {
         this._canvas.addEventListener(event, listener);
     }
 
-    _onPan(e) {
+    private _onPan(e: HammerInput): void {
         e.preventDefault();
 
         if (!this._panning) {
@@ -81,7 +96,7 @@ export default class Controls {
         this._applyPan(e);
     }
 
-    _onPanStart(e) {
+    private _onPanStart(e: HammerInput): void {
         e.preventDefault();
 
         this._panning = true;
@@ -92,7 +107,7 @@ export default class Controls {
         this._applyPan(e);
     }
 
-    _onPanEnd(e) {
+    private _onPanEnd(e: HammerInput): void {
         e.preventDefault();
 
         if (!this._panning) {
@@ -107,7 +122,7 @@ export default class Controls {
         this._panning = false;
     }
 
-    _onPanCancel() {
+    private _onPanCancel(): void {
         if (!this._panning) {
             return;
         }
@@ -116,13 +131,16 @@ export default class Controls {
         this._panning = false;
     }
 
-    _applyPan(e) {
+    private _applyPan(e: HammerInput): void {
         const scale = this._controller.getScale();
 
-        this._controller.translateAbsolute(this._oldTranslateX + e.deltaX/scale, this._oldTranslateY - e.deltaY/scale);
+        this._controller.translateAbsolute(
+            this._oldTranslateX + e.deltaX / scale,
+            this._oldTranslateY - e.deltaY / scale
+        );
     }
 
-    _onPinch(e) {
+    private _onPinch(e: HammerInput): void {
         e.preventDefault();
 
         if (!this._pinching) {
@@ -132,7 +150,7 @@ export default class Controls {
         this._applyPinch(e);
     }
 
-    _onPinchStart(e) {
+    private _onPinchStart(e: HammerInput): void {
         e.preventDefault();
 
         this._pinching = true;
@@ -144,7 +162,7 @@ export default class Controls {
         this._applyPinch(e);
     }
 
-    _onPinchEnd(e) {
+    private _onPinchEnd(e: HammerInput): void {
         e.preventDefault();
 
         if (!this._pinching) {
@@ -159,7 +177,7 @@ export default class Controls {
         this._pinching = false;
     }
 
-    _onPinchCancel() {
+    private _onPinchCancel(): void {
         if (!this._pinching) {
             return;
         }
@@ -173,28 +191,31 @@ export default class Controls {
         this._pinching = false;
     }
 
-    _applyPinch(e) {
+    private _applyPinch(e: HammerInput): void {
         const newScale = this._oldScale * e.scale;
 
         this._controller
             .startBatch()
             .rescale(this._oldScale)
-            .translateAbsolute(this._oldTranslateX + e.deltaX/this._oldScale, this._oldTranslateY - e.deltaY/this._oldScale);
+            .translateAbsolute(
+                this._oldTranslateX + e.deltaX / this._oldScale,
+                this._oldTranslateY - e.deltaY / this._oldScale
+            );
 
         this._applyRescale(newScale, e.center.x, e.center.y);
 
         this._controller.commitBatch();
     }
 
-    _onWheel(e) {
+    private _onWheel(e: WheelEvent): void {
         const oldScale = this._controller.getScale(),
             newScale = oldScale - oldScale * e.deltaY / 500;
 
         this._applyRescale(newScale, e.clientX, e.clientY);
     }
 
-    _onTap(e) {
-        switch (e.tapCount) {
+    private _onTap(e: HammerInput): void {
+        switch ((e as any).tapCount) {
             case 1:
                 return this._applyClick(e.center.x, e.center.y);
 
@@ -205,7 +226,7 @@ export default class Controls {
         }
     }
 
-    _translateClientCoordinates(clientX, clientY) {
+    private _translateClientCoordinates(clientX: number, clientY: number): Point {
         const canvasRect = this._canvas.getBoundingClientRect();
 
         return {
@@ -214,34 +235,29 @@ export default class Controls {
         };
     }
 
-    _applyRescale(scale, clientX, clientY) {
+    private _applyRescale(scale: number, clientX: number, clientY: number): void {
         const {x, y} = this._translateClientCoordinates(clientX, clientY);
 
         this._controller.rescaleAroundCenter(scale, x / scale, y / scale);
     }
 
-    _applyClick(clientX, clientY) {
+    private _applyClick(clientX: number, clientY: number): void {
         const {x, y} = this._translateClientCoordinates(clientX, clientY);
 
         this._featureInteractionProvider.click(x, y);
     }
 
-    _onMouseMove(e) {
+    private _onMouseMove(e: PointerEvent): void {
         const {x, y} = this._translateClientCoordinates(e.clientX, e.clientY);
 
         this._featureInteractionProvider.update(x, y);
     }
 
-    destroy() {
-        this._manager = utils.destroy(this._manager);
-
-        if (this._canvasListeners) {
-            Object.keys(this._canvasListeners).forEach(
-                (event) => this._canvasListeners[event].forEach(
-                    (listener) => this._canvas.removeEventListener(event, listener)
-                )
-            );
-            this._canvasListener = null;
-        }
-    }
+    private _manager: HammerManager;
+    private _canvasListeners: {[event: string]: Array<CanvasListener>} = {};
+    private _panning = false;
+    private _pinching = false;
+    private _oldScale = 0;
+    private _oldTranslateX = 0;
+    private _oldTranslateY = 0;
 }

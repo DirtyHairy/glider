@@ -4,34 +4,42 @@ import Transformation from './Transformation';
 import RenderControl from './RenderControl';
 import Controls from './Controls';
 import Controller from './Controller';
-import * as rendererFactory from './renderer/factory';
+import {Type as RendererType, createRenderer} from './renderer/factory';
 import Collection from './utils/Collection';
 import FeatureInteractionProvider from './FeatureInteractionProvider';
 import Animation from './Animation';
+import Renderer  from './renderer/Renderer';
+import FeatureSet from './FeatureSet';
+
+// tslint:disable:member-ordering
 
 export default class Viewer {
-    constructor(rendererType, canvas, imageUrl) {
-        this._canvas = canvas;
-        this._transformation = new Transformation();
-        this._featureSets = new Collection();
-        this._listeners = new ListenerGroup();
-        this._renderer = rendererFactory.createRenderer(rendererType,
-            canvas, imageUrl, this._transformation, this._featureSets);
+    constructor(
+        rendererType: RendererType,
+        private _canvas: HTMLCanvasElement,
+        imageUrl: string
+    ) {
+        this._renderer = createRenderer(
+            rendererType,
+            this._canvas,
+            imageUrl,
+            this._transformation,
+            this._featureSets
+        );
+
         this._renderControl = new RenderControl(this._renderer);
+
         this._featureInteractionProvider = new FeatureInteractionProvider(
             this._featureSets,
             this._renderer.getPickingProvider()
         );
-        this._controller = null;
-        this._controls = null;
-        this._animation = null;
 
         this._listeners.add(this._renderer, 'render', this._onRender.bind(this));
 
         this._readyPromise = this._init();
     }
 
-    _init() {
+    private _init(): Promise<any> {
         return this._renderer.ready()
             .then(() => {
                 this._controller = new Controller(this._renderControl, this._transformation);
@@ -47,35 +55,35 @@ export default class Viewer {
             });
     }
 
-    _onFeatureSetChange() {
+    private _onFeatureSetChange(): void {
         this._renderControl.render();
     }
 
-    _onRender() {
+    private _onRender(): void {
         this._featureInteractionProvider.update();
     }
 
-    getRenderer() {
+    getRenderer(): Renderer {
         return this._renderer;
     }
 
-    getCanvas() {
+    getCanvas(): HTMLCanvasElement {
         return this._canvas;
     }
 
-    getControls() {
+    getControls(): Controls {
         return this._controls;
     }
 
-    getController() {
+    getController(): Controller {
         return this._controller;
     }
 
-    getTransformation() {
+    getTransformation(): Transformation {
         return this._transformation;
     }
 
-    addFeatureSet(featureSet) {
+    addFeatureSet(featureSet: FeatureSet): this {
         const changeListener = this._onFeatureSetChange.bind(this, featureSet);
 
         this._featureSets.add(featureSet);
@@ -90,7 +98,7 @@ export default class Viewer {
         return this;
     }
 
-    removeFeatureSet(featureSet) {
+    removeFeatureSet(featureSet: FeatureSet): this {
         if (this._featureSets.remove(featureSet)) {
             this._listeners.removeTarget(featureSet);
             this._renderControl.render();
@@ -99,17 +107,17 @@ export default class Viewer {
         return this;
     }
 
-    ready() {
+    ready(): Promise<any> {
         return this._readyPromise;
     }
 
-    applyCanvasResize() {
+    applyCanvasResize(): void {
         this._renderer.applyCanvasResize();
         this._controller.clampToScreen();
         this._renderControl.render();
     }
 
-    destroy() {
+    destroy(): void {
         if (this._renderer) {
             this._listeners.removeTarget(this._renderer);
         }
@@ -130,4 +138,17 @@ export default class Viewer {
             this._featureSets = utils.destroy(this._featureSets);
         }
     }
+
+    private _transformation = new Transformation();
+    private _featureSets = new Collection<FeatureSet>();
+    private _listeners = new ListenerGroup();
+
+    private _renderer: Renderer = null;
+    private _renderControl: RenderControl = null;
+    private _featureInteractionProvider: FeatureInteractionProvider = null;
+    private _controller: Controller = null;
+    private _controls: Controls = null;
+    private _animation: Animation = null;
+
+    private _readyPromise: Promise<any> = null;
 }
