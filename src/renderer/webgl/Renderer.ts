@@ -3,11 +3,15 @@ import ImageLayer from './ImageLayer';
 import PickingManager from './PickingManager';
 import ProjectionMatrix from './ProjectionMatrix';
 import TransformationMatrix from './TransformationMatrix';
+import FeatureSet from '../../FeatureSet';
 import * as utils from '../../utils';
 import AbstractRenderer from '../AbstractRenderer';
 
-export default class Renderer extends AbstractRenderer {
-    init() {
+// tslint:disable:member-ordering
+
+export default class Renderer extends AbstractRenderer<GlFeatureSet> {
+
+    init(): this {
         const gl = this._canvas.getContext('webgl', {
             alpha: false
         });
@@ -16,7 +20,7 @@ export default class Renderer extends AbstractRenderer {
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         this._gl = gl;
-        this._projectionMatrix = new ProjectionMatrix(this._canvas.width, this._canvas.heigth);
+        this._projectionMatrix = new ProjectionMatrix(this._canvas.width, this._canvas.height);
         this._transformationMatrix = new TransformationMatrix(this._transformation);
 
         this._pickingManager = this._createPickingManager().init(this._gl);
@@ -25,11 +29,11 @@ export default class Renderer extends AbstractRenderer {
         return this;
     }
 
-    _createImageLayer(imageUrl) {
+    private _createImageLayer(imageUrl: string): ImageLayer {
         return new ImageLayer(imageUrl, this._projectionMatrix, this._transformationMatrix);
     }
 
-    _createPickingManager() {
+    private _createPickingManager(): PickingManager {
         return new PickingManager(
             this._featureSets, this._renderFeatureSets,
             this._transformationMatrix, this._projectionMatrix,
@@ -37,11 +41,11 @@ export default class Renderer extends AbstractRenderer {
         );
     }
 
-    _createRenderFeatureSet(featureSet) {
+    protected _createRenderFeatureSet(featureSet: FeatureSet): GlFeatureSet {
         return new GlFeatureSet(this._gl, featureSet, this._projectionMatrix, this._transformationMatrix);
     }
 
-    _renderImplementation() {
+    protected _renderImplementation(): boolean {
         const gl = this._gl;
 
         let didRender = false;
@@ -87,4 +91,11 @@ export default class Renderer extends AbstractRenderer {
         this._transformationMatrix = utils.destroy(this._transformationMatrix);
         this._projectionMatrix = utils.destroy(this._projectionMatrix);
     }
+
+    protected _imageLayer: ImageLayer;
+    protected _pickingManager: PickingManager;
+
+    private _gl: WebGLRenderingContext = null;
+    private _projectionMatrix: ProjectionMatrix = null;
+    private _transformationMatrix: TransformationMatrix = null;
 }
