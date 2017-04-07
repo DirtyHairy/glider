@@ -1,12 +1,13 @@
+import FeatureSet from '../../FeatureSet';
+import Transformation from '../../Transformation';
+import Quad from '../../Quad';
+
 export default class RenderFeatureSet {
-    constructor(ctx, featureSet, transformation, canvas) {
-        this._ctx = ctx;
-        this._featureSet = featureSet;
-        this._transformation = transformation;
-        this._canvas = canvas;
+    constructor(private _ctx: CanvasRenderingContext2D, private _featureSet: FeatureSet,
+                private _transformation: Transformation, private _canvas: HTMLCanvasElement) {
     }
 
-    render() {
+    render(): void {
         const scale = this._transformation.getScale(),
             dx = this._transformation.getTranslateX(),
             dy = this._transformation.getTranslateY(),
@@ -15,7 +16,7 @@ export default class RenderFeatureSet {
             canvasWidth2 = this._canvas.width / 2,
             canvasHeight2 = this._canvas.height / 2;
 
-        this._featureSet.forEach((feature) => {
+        this._featureSet.forEach((feature: Quad) => {
             const originalHeight = feature.getHeight(),
                 width =     Math.round(feature.getWidth() * scale),
                 height =    Math.round(originalHeight * scale),
@@ -35,6 +36,7 @@ export default class RenderFeatureSet {
     }
 }
 
-function rectangleIntersection(l1, t1, r1, b1, l2, t2, r2, b2) {
+function rectangleIntersection(l1: number, t1: number, r1: number, b1: number,
+                               l2: number, t2: number, r2: number, b2: number): boolean {
     return !(r2 < l1 || l2 > r1 || b2 < t1 || t2 > b1);
 }
