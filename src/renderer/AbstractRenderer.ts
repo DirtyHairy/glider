@@ -12,6 +12,7 @@ import Transformation from '../Transformation';
 import * as utils from '../utils';
 
 abstract class AbstractRenderer<RenderFeatureSetT extends utils.Destroyable> implements Renderer {
+
     constructor(
         protected _canvas: HTMLCanvasElement,
         protected _imageUrl: string,
