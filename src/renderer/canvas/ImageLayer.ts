@@ -1,30 +1,31 @@
 import * as utils from '../../utils';
+import Transformation from '../../Transformation';
 
 export default class ImageLayer {
-    constructor(ctx, imageUrl, transformation, canvas) {
-        this._ctx = ctx;
-        this._imageUrl = imageUrl;
+    constructor(
+        private _ctx: CanvasRenderingContext2D,
+        private _imageUrl: string,
+        private _transformation: Transformation,
+        private _canvas: HTMLCanvasElement
+    ) {
         this._image = null;
-        this._canvas = canvas;
-        this._transformation = transformation;
-
         this._ready = this._init();
     }
 
-    _init() {
+    _init(): Promise<any> {
         return utils.loadImage(this._imageUrl)
             .then((image) => this._image = image);
     }
 
-    ready() {
+    ready(): Promise<any> {
         return this._ready;
     }
 
-    isReady() {
+    isReady(): boolean {
         return !!this._image;
     }
 
-    render() {
+    render(): void {
         const dx = this._transformation.getTranslateX(),
             dy =            this._transformation.getTranslateY(),
             scale =         this._transformation.getScale(),
@@ -60,12 +61,15 @@ export default class ImageLayer {
         );
     }
 
-    getImageWidth() {
+    getImageWidth(): number {
         return this._image.width;
     }
 
-    getImageHeight() {
+    getImageHeight(): number {
         return this._image.height;
     }
+
+    private _image: HTMLImageElement = null;
+    private _ready: Promise<any> = null;
 
 }
