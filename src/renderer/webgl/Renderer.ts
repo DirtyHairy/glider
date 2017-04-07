@@ -7,8 +7,6 @@ import FeatureSet from '../../FeatureSet';
 import * as utils from '../../utils';
 import AbstractRenderer from '../AbstractRenderer';
 
-// tslint:disable:member-ordering
-
 export default class Renderer extends AbstractRenderer<GlFeatureSet> {
 
     init(): this {
@@ -29,16 +27,24 @@ export default class Renderer extends AbstractRenderer<GlFeatureSet> {
         return this;
     }
 
-    private _createImageLayer(imageUrl: string): ImageLayer {
-        return new ImageLayer(imageUrl, this._projectionMatrix, this._transformationMatrix);
+    applyCanvasResize() {
+        AbstractRenderer.prototype.applyCanvasResize.apply(this);
+
+        this._gl.viewport(0, 0, this._canvas.width, this._canvas.height);
+        this._projectionMatrix
+            .setWidth(this._canvas.width)
+            .setHeight(this._canvas.height);
+
+        this._pickingManager.adjustViewportSize(this._canvas.width, this._canvas.height);
+
+        return this;
     }
 
-    private _createPickingManager(): PickingManager {
-        return new PickingManager(
-            this._featureSets, this._renderFeatureSets,
-            this._transformationMatrix, this._projectionMatrix,
-            this._canvas.width, this._canvas.height
-        );
+    destroy() {
+        AbstractRenderer.prototype.destroy.apply(this);
+
+        this._transformationMatrix = utils.destroy(this._transformationMatrix);
+        this._projectionMatrix = utils.destroy(this._projectionMatrix);
     }
 
     protected _createRenderFeatureSet(featureSet: FeatureSet): GlFeatureSet {
@@ -72,24 +78,16 @@ export default class Renderer extends AbstractRenderer<GlFeatureSet> {
         return didRender;
     }
 
-    applyCanvasResize() {
-        AbstractRenderer.prototype.applyCanvasResize.apply(this);
-
-        this._gl.viewport(0, 0, this._canvas.width, this._canvas.height);
-        this._projectionMatrix
-            .setWidth(this._canvas.width)
-            .setHeight(this._canvas.height);
-
-        this._pickingManager.adjustViewportSize(this._canvas.width, this._canvas.height);
-
-        return this;
+    private _createImageLayer(imageUrl: string): ImageLayer {
+        return new ImageLayer(imageUrl, this._projectionMatrix, this._transformationMatrix);
     }
 
-    destroy() {
-        AbstractRenderer.prototype.destroy.apply(this);
-
-        this._transformationMatrix = utils.destroy(this._transformationMatrix);
-        this._projectionMatrix = utils.destroy(this._projectionMatrix);
+    private _createPickingManager(): PickingManager {
+        return new PickingManager(
+            this._featureSets, this._renderFeatureSets,
+            this._transformationMatrix, this._projectionMatrix,
+            this._canvas.width, this._canvas.height
+        );
     }
 
     protected _imageLayer: ImageLayer;
