@@ -1,12 +1,10 @@
+import RendererInterface from './renderer/Renderer';
+
 export default class RenderControl {
-    constructor(renderer) {
-        this._renderer = renderer;
-        this._batchId = 0;
-        this._renderPending = false;
-        this._suspendRender = 0;
+    constructor(private _renderer: RendererInterface) {
     }
 
-    render() {
+    render(): this {
         if (this._suspendRender > 0) {
             return this;
         }
@@ -20,19 +18,19 @@ export default class RenderControl {
         return this;
     }
 
-    startBatch() {
+    startBatch(): this {
         this._batchId++;
 
         return this;
     }
 
-    suspendRender() {
+    suspendRender(): this {
         this._suspendRender++;
 
         return this;
     }
 
-    resumeRender() {
+    resumeRender(): this {
         this._suspendRender--;
 
         if (this._suspendRender < 0) {
@@ -42,7 +40,7 @@ export default class RenderControl {
         return this;
     }
 
-    commitBatch() {
+    commitBatch(): this {
         if (this._batchId <= 0) {
             this._batchId = 0;
             return this;
@@ -58,7 +56,11 @@ export default class RenderControl {
         return this;
     }
 
-    getRenderer() {
+    getRenderer(): RendererInterface {
         return this._renderer;
     }
+
+    private _batchId: number = 0;
+    private _renderPending: boolean = false;
+    private _suspendRender: number = 0;
 }
