@@ -1,8 +1,12 @@
 import Point from '../../Point';
 
 class PickingBuffer {
-    constructor(private _extend: number, private _canvasWidth: number, private _canvasHeight: number,
-                private _gl: WebGLRenderingContext) {
+    constructor(
+        private _extend: number,
+        private _canvasWidth: number,
+        private _canvasHeight: number,
+        private _gl: WebGLRenderingContext
+    ) {
         this._buffer = new Uint8Array(this._extend * this._extend * 4);
     }
 
@@ -24,7 +28,8 @@ class PickingBuffer {
 
         gl.readPixels(
             this._left, this._bottom,
-            Math.min(this._extend, this._canvasWidth), Math.min(this._extend, this._canvasHeight),
+            Math.min(this._extend, this._canvasWidth - this._left),
+            Math.min(this._extend, this._canvasHeight - this._bottom),
             gl.RGBA, gl.UNSIGNED_BYTE, this._buffer);
 
         this._valid = true;
@@ -43,7 +48,11 @@ class PickingBuffer {
             relX = windowX - this._left,
             relY = windowY - this._bottom;
 
-        return new Uint8Array(this._buffer.buffer, 4 * (relY * Math.min(this._extend, this._canvasWidth) + relX), 4);
+        return new Uint8Array(
+            this._buffer.buffer,
+            4 * (relY * Math.min(this._extend, this._canvasWidth - this._left) + relX),
+            4
+        );
     }
 
     adjustViewportSize(width: number, height: number): void {

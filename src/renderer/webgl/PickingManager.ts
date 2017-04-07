@@ -15,10 +15,10 @@ import PickingManagerInterface from '../PickingManager';
 const TEXTURE_UNIT = 1;
 
 class PickingManager implements PickingManagerInterface {
-    constructor(private _featureSets: Collection<FeatureSet>, private _glFeatureSets: WeakMap<FeatureSet, GlFeatureSet>,
-                private _transformationMatrix: TransformationMatrix, private _projectionMatrix: ProjectionMatrix,
-                private _width: number, private _height: number) {
-    }
+    constructor(
+        private _featureSets: Collection<FeatureSet>, private _glFeatureSets: WeakMap<FeatureSet, GlFeatureSet>,
+        private _transformationMatrix: TransformationMatrix, private _projectionMatrix: ProjectionMatrix,
+        private _width: number, private _height: number) {}
 
     init(gl: WebGLRenderingContext): this {
         this._gl = gl;

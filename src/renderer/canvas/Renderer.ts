@@ -43,7 +43,8 @@ export default class Renderer extends AbstractRenderer<RenderFeatureSet> {
             exec();
         } else {
             this._dependencyTracker.updateAll(
-                [this._transformation, ...this._featureSets.items()], exec);
+                [this._transformation, ...this._featureSets.items()], exec
+            );
         }
 
         return didRender;

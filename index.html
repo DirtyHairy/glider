@@ -41,15 +41,48 @@
             );
 
         var features = new glider.FeatureSet(),
-            feature = new glider.Quad({
+            centerFeature = new glider.Quad({
                 left: 0,
                 bottom: 100,
                 width: 200,
                 height: 200,
                 fillColor: new glider.RGBA(0, 0, 0, 0.4)
+            }),
+            nwFeature = new glider.Quad({
+                left: -560,
+                bottom: 500,
+                width: 50,
+                height: 50,
+                fillColor: new glider.RGBA(0, 0, 0, 0.4)
+            }),
+            neFeature = new glider.Quad({
+                left: 510,
+                bottom: 500,
+                width: 50,
+                height: 50,
+                fillColor: new glider.RGBA(0, 0, 0, 0.4)
+            }),
+            swFeature = new glider.Quad({
+                left: -560,
+                bottom: -550,
+                width: 50,
+                height: 50,
+                fillColor: new glider.RGBA(0, 0, 0, 0.4)
+            }),
+            seFeature = new glider.Quad({
+                left: 510,
+                bottom: -550,
+                width: 50,
+                height: 50,
+                fillColor: new glider.RGBA(0, 0, 0, 0.4)
             });
 
-        features.add(feature);
+        features
+            .add(centerFeature)
+            .add(nwFeature)
+            .add(neFeature)
+            .add(swFeature)
+            .add(seFeature);
 
         var animationHandle = null,
             phase = 0,
@@ -67,7 +100,7 @@
 
                 phase = frozenPhase + 2 * Math.PI / 5000 * delta;
 
-                feature
+                centerFeature
                     .setLeft(100 * Math.sin(phase))
                     .setBottom(100 * Math.cos(phase));
             }, 10)
