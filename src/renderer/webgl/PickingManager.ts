@@ -1,32 +1,27 @@
+import Collection from '../../utils/Collection';
 import DependencyTracker from '../../utils/DependencyTracker';
+import GlFeatureSet from './GlFeatureSet';
 import Texture from './glutil/Texture';
 import FrameBufferObject from './glutil/FrameBufferObject';
 import PickingColorManager from './PickingColorManager';
 import * as utils from '../../utils';
 import ListenerGroup from '../../utils/ListenerGroup';
 import PickingBuffer from './PickingBuffer';
+import {default as FeatureSet, Feature} from '../../FeatureSet';
+import TransformationMatrix from './TransformationMatrix';
+import ProjectionMatrix from './ProjectionMatrix';
 
 const TEXTURE_UNIT = 1;
 
-export default class PickingManager {
-    constructor(featureSets, glFeatureSets, transformationMatrix, projectionMatrix, width, height) {
-        this._gl = null;
-        this._dependencyTracker = new DependencyTracker();
-        this._transformationMatrix = transformationMatrix;
-        this._projectionMatrix = projectionMatrix;
-        this._featureSets = featureSets;
-        this._glFeatureSets = glFeatureSets;
-        this._listeners = new ListenerGroup();
-        this._colorManagers = new WeakMap();
-        this._width = width;
-        this._height = height;
-        this._forceRedraw = true;
-        this._pickingBuffer = null;
-        this._pickingBufferMiss = 0;
-        this._pickingBufferThreshold = 3;
+// tslint:disable:member-ordering
+
+class PickingManager {
+    constructor(private _featureSets: Collection<FeatureSet>, private _glFeatureSets: WeakMap<FeatureSet, GlFeatureSet>,
+                private _transformationMatrix: TransformationMatrix, private _projectionMatrix: ProjectionMatrix,
+                private _width: number, private _height: number) {
     }
 
-    init(gl) {
+    init(gl: WebGLRenderingContext): this {
         this._gl = gl;
         this._pickingBuffer = new PickingBuffer(400, this._width, this._height, gl);
 
@@ -36,7 +31,7 @@ export default class PickingManager {
         return this;
     }
 
-    _setupFramebuffer() {
+    private _setupFramebuffer(): void {
         const gl = this._gl,
             fbo = new FrameBufferObject(gl),
             texture = Texture.fromPixelData(gl, this._width, this._height, null, TEXTURE_UNIT, {
@@ -58,7 +53,7 @@ export default class PickingManager {
         this._fbo = fbo;
     }
 
-    _onFeatureSetAdded(featureSet) {
+    private _onFeatureSetAdded(featureSet: FeatureSet): this {
         this._colorManagers.set(featureSet, new PickingColorManager(0));
         this._assignFeatureSetIndices();
 
@@ -67,27 +62,27 @@ export default class PickingManager {
         return this;
     }
 
-    _onFeatureSetRemoved(featureSet) {
+    private _onFeatureSetRemoved(featureSet: FeatureSet): void {
         this._colorManagers.delete(featureSet);
         this._assignFeatureSetIndices();
 
         this._forceRedraw = true;
     }
 
-    _registerFeatureSets() {
+    private _registerFeatureSets(): void {
         this._listeners.add(this._featureSets, 'add', this._onFeatureSetAdded.bind(this));
         this._listeners.add(this._featureSets, 'remove', this._onFeatureSetRemoved.bind(this));
 
         this._featureSets.forEach(this._onFeatureSetAdded.bind(this));
     }
 
-    _assignFeatureSetIndices() {
+    private _assignFeatureSetIndices(): void {
         this._featureSets.forEach((featureSet, i) => {
             this._colorManagers.get(featureSet).setFeatureSetIndex(i);
         });
     }
 
-    _render() {
+    private _render(): boolean {
         const gl = this._gl;
         let redraw = false;
 
@@ -127,7 +122,7 @@ export default class PickingManager {
         return redraw;
     }
 
-    adjustViewportSize(width, height) {
+    public adjustViewportSize(width: number, height: number): this {
         this._width = width;
         this._height = height;
 
@@ -140,10 +135,10 @@ export default class PickingManager {
         return this;
     }
 
-    getFeatureAt(x, y) {
+    public getFeatureAt(x: number, y: number): Feature {
         const gl = this._gl;
 
-        if (Math.abs(x) > this._width / 2  || Math.abs(y) > this._heigth / 2) {
+        if (Math.abs(x) > this._width / 2  || Math.abs(y) > this._height / 2) {
             return null;
         }
 
@@ -151,7 +146,7 @@ export default class PickingManager {
             this._fbo.bind();
         }
 
-        var pixelData;
+        let pixelData: Uint8Array;
 
         if (this._pickingBuffer.contains(x, y) || ++this._pickingBufferMiss > this._pickingBufferThreshold) {
             pixelData = this._pickingBuffer.read(x, y);
@@ -164,20 +159,22 @@ export default class PickingManager {
                 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelData);
         }
 
-        const featureSetIdx =     (pixelData[0] << 8) | pixelData[1],
-            featureIdx =        (pixelData[2] << 8) | pixelData[3],
+        // tslint:disable:no-bitwise
+        const featureSetIdx = (pixelData[0] << 8) | pixelData[1],
+            featureIdx = (pixelData[2] << 8) | pixelData[3],
             featureSet = (featureSetIdx > 0 && featureSetIdx <= this._featureSets.count()) ?
-                this._featureSets.get([featureSetIdx - 1]) : null,
+                this._featureSets.get(featureSetIdx - 1) : null,
             feature = (featureSet && featureIdx < featureSet.count()) ? featureSet.get(featureIdx) : null;
+        // tslint:enable:no-bitwise
 
         return feature;
     }
 
-    isExpensive(x, y) {
+    public isExpensive(x: number, y: number): boolean {
         return !this._pickingBuffer.contains(x, y);
     }
 
-    destroy() {
+    public destroy(): void {
         this._fbo = utils.destroy(this._fbo);
         this._texture = utils.destroy(this._texture);
         this._pickingBuffer = utils.destroy(this._pickingBuffer);
@@ -190,4 +187,17 @@ export default class PickingManager {
             this._featureSets = null;
         }
     }
+
+    private _gl: WebGLRenderingContext = null;
+    private _dependencyTracker: DependencyTracker = new DependencyTracker();
+    private _listeners: ListenerGroup = new ListenerGroup();
+    private _colorManagers: WeakMap<FeatureSet, PickingColorManager> = new WeakMap();
+    private _forceRedraw: boolean = true;
+    private _pickingBuffer: PickingBuffer = null;
+    private _pickingBufferMiss: number = 0;
+    private _pickingBufferThreshold: number = 3;
+    private _texture: Texture;
+    private _fbo: FrameBufferObject;
 }
+
+export default PickingManager;

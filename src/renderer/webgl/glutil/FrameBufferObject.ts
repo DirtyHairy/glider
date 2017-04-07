@@ -6,7 +6,7 @@ export default class FrameBufferObject {
         this._boundContext = new BoundContext(this);
     }
 
-    bind(cb: (context: BoundContext) => void): this {
+    bind(cb?: (context: BoundContext) => void): this {
         const gl = this._gl;
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this._fbo);
