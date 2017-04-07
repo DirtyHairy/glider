@@ -11,8 +11,6 @@ import Animation from './Animation';
 import Renderer  from './renderer/Renderer';
 import FeatureSet from './FeatureSet';
 
-// tslint:disable:member-ordering
-
 export default class Viewer {
     constructor(
         rendererType: RendererType,
@@ -37,30 +35,6 @@ export default class Viewer {
         this._listeners.add(this._renderer, 'render', this._onRender.bind(this));
 
         this._readyPromise = this._init();
-    }
-
-    private _init(): Promise<any> {
-        return this._renderer.ready()
-            .then(() => {
-                this._controller = new Controller(this._renderControl, this._transformation);
-                this._animation = new Animation(this._controller, this._renderer);
-                this._controls = new Controls(
-                    this._canvas,
-                    this._controller,
-                    this._animation,
-                    this._featureInteractionProvider
-                );
-
-                this._renderControl.render();
-            });
-    }
-
-    private _onFeatureSetChange(): void {
-        this._renderControl.render();
-    }
-
-    private _onRender(): void {
-        this._featureInteractionProvider.update();
     }
 
     getRenderer(): Renderer {
@@ -137,6 +111,30 @@ export default class Viewer {
 
             this._featureSets = utils.destroy(this._featureSets);
         }
+    }
+
+    private _init(): Promise<any> {
+        return this._renderer.ready()
+            .then(() => {
+                this._controller = new Controller(this._renderControl, this._transformation);
+                this._animation = new Animation(this._controller, this._renderer);
+                this._controls = new Controls(
+                    this._canvas,
+                    this._controller,
+                    this._animation,
+                    this._featureInteractionProvider
+                );
+
+                this._renderControl.render();
+            });
+    }
+
+    private _onFeatureSetChange(): void {
+        this._renderControl.render();
+    }
+
+    private _onRender(): void {
+        this._featureInteractionProvider.update();
     }
 
     private _transformation = new Transformation();
