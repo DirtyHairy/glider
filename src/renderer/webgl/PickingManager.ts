@@ -10,10 +10,11 @@ import PickingBuffer from './PickingBuffer';
 import {default as FeatureSet, Feature} from '../../FeatureSet';
 import TransformationMatrix from './TransformationMatrix';
 import ProjectionMatrix from './ProjectionMatrix';
+import PickingManagerInterface from '../PickingManager';
 
 const TEXTURE_UNIT = 1;
 
-class PickingManager {
+class PickingManager implements PickingManagerInterface {
     constructor(private _featureSets: Collection<FeatureSet>, private _glFeatureSets: WeakMap<FeatureSet, GlFeatureSet>,
                 private _transformationMatrix: TransformationMatrix, private _projectionMatrix: ProjectionMatrix,
                 private _width: number, private _height: number) {
